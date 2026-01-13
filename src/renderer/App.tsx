@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { DataProvider } from './contexts/DataContext';
 import { useWorkspaces } from './hooks/useWorkspaces';
@@ -9,10 +9,11 @@ import { EmptyState } from './components/workspace/EmptyState';
 import { RequestPanel } from './components/request/RequestPanel';
 
 import { SettingsModal } from './components/settings/SettingsModal';
+import { useSettings } from './contexts/SettingsContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 function AppContent() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { settings, updateSettings } = useSettings();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { workspaces, activeWorkspace, loading: workspacesLoading } = useWorkspaces();
   const { selectedRequest, updateRequest, loading: dataLoading } = useData();
@@ -22,29 +23,16 @@ function AppContent() {
 
   const loading = workspacesLoading || (dataLoading && !workspaces.length);
 
-  useEffect(() => {
-    // Detect system theme preference
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(isDark ? 'dark' : 'light');
+  // Helper to determining current visual theme
+  const isDark = settings?.theme === 'dark' || 
+    (settings?.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    // Listen for theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? 'dark' : 'light');
-    };
+  const toggleTheme = () => {
+     const newTheme = isDark ? 'light' : 'dark';
+     updateSettings({ theme: newTheme });
+  };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  useEffect(() => {
-    // Apply theme to document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
+  // Note: Theme application logic is handled centrally in SettingsContext
 
   const hasWorkspaces = workspaces.length > 0;
 
@@ -57,10 +45,10 @@ function AppContent() {
         </h1>
         <div className="ml-auto flex items-center gap-2">
           <button
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            onClick={toggleTheme}
             className="px-3 py-1 text-sm rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {isDark ? '☀️' : '🌙'}
           </button>
         </div>
       </header>

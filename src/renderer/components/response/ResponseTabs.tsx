@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Response } from '../../../shared/types';
 import { ResponseHeaders } from './ResponseHeaders';
+import { CodeEditor } from '../common/CodeEditor';
 
 interface ResponseTabsProps {
   response: Response;
@@ -10,6 +11,11 @@ type TabType = 'body' | 'headers';
 
 export function ResponseTabs({ response }: ResponseTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('body');
+
+  const isJson = useMemo(() => {
+    const contentType = response.headers?.find(h => h.name.toLowerCase() === 'content-type');
+    return contentType?.value.includes('application/json');
+  }, [response.headers]);
 
   return (
     <div className="flex flex-col h-full">
@@ -40,11 +46,20 @@ export function ResponseTabs({ response }: ResponseTabsProps) {
       {/* Content */}
       <div className="flex-1 overflow-hidden relative bg-white dark:bg-gray-950">
         {activeTab === 'body' && (
-           <textarea 
-             readOnly
-             value={response.body || ''}
-             className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:ring-0 text-gray-800 dark:text-gray-200"
-           />
+          isJson ? (
+            <CodeEditor
+              value={response.body || ''}
+              language="json"
+              readOnly={true}
+              onChange={() => {}}
+            />
+          ) : (
+            <textarea 
+              readOnly
+              value={response.body || ''}
+              className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:ring-0 text-gray-800 dark:text-gray-200"
+            />
+          )
         )}
         
         {activeTab === 'headers' && (

@@ -1,4 +1,5 @@
 import { RequestBody, BodyType } from '../../../../shared/types';
+import { CodeEditor } from '../../common/CodeEditor';
 
 interface BodyEditorProps {
   body: RequestBody;
@@ -36,11 +37,6 @@ export function BodyEditor({ body, onChange }: BodyEditorProps) {
            </select>
         </div>
         
-        {body.type === 'json' && (
-           <div className="text-xs text-gray-400">
-             (JSON validation coming soon)
-           </div>
-        )}
       </div>
 
       {/* Editor Area */}
@@ -48,13 +44,21 @@ export function BodyEditor({ body, onChange }: BodyEditorProps) {
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
           No body
         </div>
+      ) : body.type === 'json' ? (
+        <div className="flex-1 relative border-t border-gray-200 dark:border-gray-800">
+           <CodeEditor
+             value={body.text || ''}
+             onChange={handleContentChange}
+             language="json"
+           />
+        </div>
       ) : (
         <div className="flex-1 relative">
           <textarea
             value={body.text || ''}
             onChange={(e) => handleContentChange(e.target.value)}
             className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none bg-transparent text-gray-800 dark:text-gray-200"
-            placeholder={body.type === 'json' ? '{\n  "key": "value"\n}' : 'Enter text body...'}
+            placeholder="Enter text body..."
           />
         </div>
       )}
