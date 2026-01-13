@@ -9,9 +9,13 @@ import {
   getRequestsByWorkspace,
   getRequestById,
   createResponse,
+  getWorkspaceIdForRequest,
+  getActiveEnvironment,
+  getVariablesByEnvironment,
 } from '../database/models';
 import { HttpService } from '../http/client';
 import { saveResponseBody } from '../utils/file-manager';
+import { TemplateEngine } from '../utils/template-engine';
 
 /**
  * Register all request IPC handlers
@@ -146,11 +150,25 @@ export const registerRequestHandlers = (): void => {
         throw new Error('Request not found');
       }
 
-      // Send request
-      const httpService = new HttpService();
-      const response = await httpService.sendRequest(request);
+      // 1. Resolve Environment Variables
+      let variables: any[] = [];
+      const workspaceId = await getWorkspaceIdForRequest(id);
+      
+      if (workspaceId) {
+        const activeEnv = await getActiveEnvironment(workspaceId);
+        if (activeEnv) {
+          variables = await getVariablesByEnvironment(activeEnv._id);
+        }
+      }
 
-      // Save response to history
+      // 2. Render Request
+      const renderedRequest = TemplateEngine.renderRequest(request, variables);
+
+      // 3. Send Request
+      const httpService = new HttpService();
+      const response = await httpService.sendRequest(renderedRequest);
+
+      // 4. Save Response
       // Save body to file
       const bodyPath = await saveResponseBody(
         response._id,
@@ -167,7 +185,7 @@ export const registerRequestHandlers = (): void => {
         elapsedTime: response.elapsedTime,
       });
 
-      // Return the saved response with the body content (for immediate UI display)
+      // Return the saved response with the body content
       return { 
         success: true, 
         data: {

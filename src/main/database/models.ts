@@ -262,6 +262,41 @@ export const getRequestById = async (id: string): Promise<Request | null> => {
   return await dbOperation<Request>((cb) => db.findOne({ _id: id }, cb));
 };
 
+export const getWorkspaceIdForRequest = async (requestId: string): Promise<string | null> => {
+  let currentId = requestId;
+  let type = 'Request';
+  
+  // Max depth protection
+  let depth = 0;
+  while (depth < 20) {
+    let item: any;
+    
+    if (type === 'Request') {
+      item = await getRequestById(currentId);
+    } else if (type === 'Folder') {
+      item = await dbOperation((cb) => getDatabase('Folder').findOne({ _id: currentId }, cb));
+    }
+    
+    if (!item) return null;
+    
+    // Check if the parent is a workspace
+    const parentId = item.parentId;
+    const workspace = await getWorkspaceById(parentId);
+    
+    if (workspace) {
+      return workspace._id;
+    }
+    
+    // If not workspace, it must be a folder (or we consider parentId is the next ID to check)
+    // We assume parent is Folder if not Workspace, until we hit a root or Workspace
+    currentId = parentId;
+    type = 'Folder';
+    depth++;
+  }
+  
+  return null;
+};
+
 // ============================================================================
 // Response Operations
 // ============================================================================
@@ -398,6 +433,15 @@ export const getEnvironmentsByWorkspace = async (
   const db = getDatabase('Environment');
   return await dbOperation<Environment[]>((cb) =>
     db.find({ workspaceId }, cb)
+  );
+};
+
+export const getActiveEnvironment = async (
+  workspaceId: string
+): Promise<Environment | null> => {
+  const db = getDatabase('Environment');
+  return await dbOperation<Environment>((cb) =>
+    db.findOne({ workspaceId, isActive: true }, cb)
   );
 };
 
