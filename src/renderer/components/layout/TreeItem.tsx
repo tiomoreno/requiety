@@ -1,14 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { WorkspaceTreeItem } from '../../../shared/types';
 
 interface TreeItemProps {
   item: WorkspaceTreeItem;
   onSelect: (item: WorkspaceTreeItem) => void;
+  onRename?: (item: WorkspaceTreeItem, newName: string) => void;
+  onMove?: (draggedId: string, targetId: string) => void;
   selectedId?: string;
+  forceExpand?: boolean;
 }
 
-export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
+export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceExpand }: TreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(item.name);
+  const [isDragOver, setIsDragOver] = useState(false);
+  
+  useEffect(() => {
+    if (forceExpand) {
+      setIsExpanded(true);
+    }
+  }, [forceExpand]);
+
   const isFolder = item.type === 'folder';
   const hasChildren = isFolder && item.children && item.children.length > 0;
   const isSelected = item.id === selectedId;
@@ -18,6 +31,68 @@ export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
       setIsExpanded(!isExpanded);
     } else {
       onSelect(item);
+    }
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRename && !isEditing) {
+      setIsEditing(true);
+      setEditName(item.name);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditName(item.name);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (editName.trim() && editName !== item.name && onRename) {
+      onRename(item, editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, type: item.type }));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (isFolder) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (isFolder && onMove) {
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('application/json'));
+        if (data.id !== item.id) {
+           onMove(data.id, item.id);
+        }
+      } catch (err) {
+        console.error('Invalid drag data', err);
+      }
     }
   };
 
@@ -42,7 +117,17 @@ export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
     <div>
       <div
         onClick={handleClick}
-        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+        onDoubleClick={handleDoubleClick}
+        draggable
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors border ${
+          isDragOver 
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/40' 
+            : 'border-transparent' // Default border
+        } ${
           isSelected
             ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
             : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
@@ -56,6 +141,10 @@ export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
           >
             <path
               strokeLinecap="round"
@@ -84,7 +173,21 @@ export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
           </span>
         )}
 
-        <span className="text-sm truncate flex-1">{item.name}</span>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={handleSubmit}
+            onKeyDown={handleKeyDown}
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            className="flex-1 text-sm px-1 py-0.5 border border-primary-500 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none min-w-0"
+          />
+        ) : (
+          <span className="text-sm truncate flex-1">{item.name}</span>
+        )}
       </div>
 
       {isFolder && hasChildren && isExpanded && (
@@ -94,7 +197,10 @@ export const TreeItem = ({ item, onSelect, selectedId }: TreeItemProps) => {
               key={child.id}
               item={child}
               onSelect={onSelect}
+              onRename={onRename}
+              onMove={onMove}
               selectedId={selectedId}
+              forceExpand={forceExpand}
             />
           ))}
         </div>

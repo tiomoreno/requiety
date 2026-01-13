@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { filterTree } from '../../utils/tree-filter';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { TreeView } from './TreeView';
 import { Button } from '../common/Button';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useData } from '../../hooks/useData';
+import { useSettings } from '../../contexts/SettingsContext';
 
 import { EnvironmentSelector } from '../environments/EnvironmentSelector';
 
@@ -13,9 +15,46 @@ interface SidebarProps {
 
 export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
   const { activeWorkspace } = useWorkspaces();
-  const { createFolder, createRequest } = useData();
+  const { createFolder, createRequest, updateFolder, updateRequest, tree } = useData();
+  const { openSettings } = useSettings();
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [creatingRequest, setCreatingRequest] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTree = useMemo(() => filterTree(tree, searchQuery), [tree, searchQuery]);
+
+  const handleRename = async (item: any, newName: string) => {
+    try {
+      if (item.type === 'folder') {
+        await updateFolder(item.id, { name: newName });
+      } else {
+        await updateRequest(item.id, { name: newName });
+      }
+    } catch (error) {
+      console.error('Failed to rename item:', error);
+    }
+  };
+
+  const handleMove = async (draggedId: string, targetId: string) => {
+    try {
+      // Determine if dragged item is request or folder
+      // We can check requests array from useData()? We restructured useData to expose requests/folders?
+      // Yes, Sidebar destructuring needs: const { folders, requests } = useData();
+      // But updateRequest is enough if we only support requests.
+      // To be robust:
+      await updateRequest(draggedId, { parentId: targetId });
+      // If it fails (e.g. not found), we catch error.
+      // Ideally check type.
+    } catch (error) {
+       // Try updating folder if request update fails? Or explicitly check.
+       console.error('Failed to move item:', error);
+       try {
+           await updateFolder(draggedId, { parentId: targetId });
+       } catch (innerError) {
+           console.error('Failed to move folder:', innerError);
+       }
+    }
+  };
 
   const handleCreateFolder = async () => {
     if (!activeWorkspace) return;
@@ -44,7 +83,7 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar flex flex-col h-full bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
       <div className="p-4 space-y-4">
         {/* Workspace Selector */}
         <WorkspaceSelector onCreateWorkspace={onCreateWorkspace} />
@@ -52,6 +91,24 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
         {/* Environment Selector */}
         {activeWorkspace && (
           <EnvironmentSelector workspaceId={activeWorkspace._id} />
+        )}
+
+        {/* Search Input */}
+        {activeWorkspace && (
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search requests..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+            />
+          </div>
         )}
 
         {/* Action Buttons */}
@@ -107,10 +164,25 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
 
       {/* Tree View */}
       {activeWorkspace && (
-        <div className="flex-1 overflow-y-auto">
-          <TreeView />
+        <div className="flex-1 overflow-y-auto px-2">
+          <TreeView
+            items={filteredTree}
+            forceExpand={!!searchQuery}
+            onRename={handleRename}
+            onMove={handleMove}
+          />
         </div>
       )}
+
+      {/* Settings Button */}
+      <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+        <button
+           onClick={openSettings}
+           className="w-full flex items-center justify-center py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        >
+          <span className="mr-2">⚙️</span> Settings
+        </button>
+      </div>
     </aside>
   );
 };

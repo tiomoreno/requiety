@@ -2,8 +2,17 @@ import { TreeItem } from './TreeItem';
 import { useData } from '../../hooks/useData';
 import type { WorkspaceTreeItem } from '../../../shared/types';
 
-export const TreeView = () => {
+interface TreeViewProps {
+  items?: WorkspaceTreeItem[];
+  forceExpand?: boolean;
+  onRename?: (item: WorkspaceTreeItem, newName: string) => void;
+  onMove?: (draggedId: string, targetId: string) => void;
+}
+
+export const TreeView = ({ items, forceExpand, onRename, onMove }: TreeViewProps) => {
   const { tree, selectedRequest, setSelectedRequest } = useData();
+
+  const displayItems = items || tree;
 
   const handleSelect = (item: WorkspaceTreeItem) => {
     if (item.type === 'request' && item.data && 'method' in item.data) {
@@ -11,7 +20,7 @@ export const TreeView = () => {
     }
   };
 
-  if (tree.length === 0) {
+  if (displayItems.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
         No folders or requests yet
@@ -21,12 +30,15 @@ export const TreeView = () => {
 
   return (
     <div className="px-2 py-2 space-y-1">
-      {tree.map((item) => (
+      {displayItems.map((item) => (
         <TreeItem
           key={item.id}
           item={item}
           onSelect={handleSelect}
+          onRename={onRename}
+          onMove={onMove}
           selectedId={selectedRequest?._id}
+          forceExpand={forceExpand}
         />
       ))}
     </div>

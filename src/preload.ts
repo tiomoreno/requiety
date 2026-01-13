@@ -108,13 +108,9 @@ contextBridge.exposeInMainWorld('api', {
   // Import/Export operations
   importExport: {
     exportWorkspace: (workspaceId: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.EXPORT_WORKSPACE, workspaceId),
-    importJSON: (json: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.IMPORT_JSON, json),
-    importPostman: (json: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.IMPORT_POSTMAN, json),
-    importCurl: (curl: string) =>
-      ipcRenderer.invoke(IPC_CHANNELS.IMPORT_CURL, curl),
+      ipcRenderer.invoke(IPC_CHANNELS.DATA_EXPORT, workspaceId),
+    importWorkspace: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT),
   },
 
   // Event listeners

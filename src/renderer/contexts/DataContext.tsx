@@ -18,6 +18,7 @@ interface DataContextType {
   createRequest: (name: string, parentId: string) => Promise<Request>;
   updateRequest: (id: string, data: Partial<Request>) => Promise<void>;
   deleteRequest: (id: string) => Promise<void>;
+  sendRequest: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
 }
 
@@ -171,6 +172,15 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     }
   };
 
+  const sendRequest = async (id: string): Promise<void> => {
+    try {
+      await requestService.send(id);
+    } catch (err) {
+      console.error('Failed to send request:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send request');
+    }
+  };
+
   const refreshData = useCallback(async (): Promise<void> => {
     await loadData();
   }, [workspaceId]);
@@ -189,6 +199,7 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     createRequest,
     updateRequest,
     deleteRequest,
+    sendRequest,
     refreshData,
   };
 

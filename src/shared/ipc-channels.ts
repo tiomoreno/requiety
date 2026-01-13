@@ -42,6 +42,10 @@ export const IPC_CHANNELS = {
   VARIABLE_DELETE: 'variable:delete',
   VARIABLE_GET_BY_ENVIRONMENT: 'variable:getByEnvironment',
 
+  // Data Transfer
+  DATA_EXPORT: 'data:export',
+  DATA_IMPORT: 'data:import',
+
   // Settings
   SETTINGS_GET: 'settings:get',
   SETTINGS_UPDATE: 'settings:update',

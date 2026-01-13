@@ -8,11 +8,17 @@ import { CreateWorkspaceDialog } from './components/workspace/CreateWorkspaceDia
 import { EmptyState } from './components/workspace/EmptyState';
 import { RequestPanel } from './components/request/RequestPanel';
 
+import { SettingsModal } from './components/settings/SettingsModal';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+
 function AppContent() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { workspaces, activeWorkspace, loading: workspacesLoading } = useWorkspaces();
   const { selectedRequest, updateRequest, loading: dataLoading } = useData();
+
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts();
 
   const loading = workspacesLoading || (dataLoading && !workspaces.length);
 
@@ -111,6 +117,9 @@ function AppContent() {
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
       />
+      
+      {/* Settings Modal (Controlled by Context) */}
+      <SettingsModal />
     </div>
   );
 }
