@@ -11,6 +11,7 @@ import { registerEnvironmentHandlers } from './main/ipc/environment';
 import { registerVariableHandlers } from './main/ipc/variable';
 import { registerSettingsHandlers } from './main/ipc/settings';
 import { registerResponseHandlers } from './main/ipc/response';
+import { registerDataTransferHandlers } from './main/ipc/data-transfer';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -68,6 +69,7 @@ const initializeApp = async () => {
     registerEnvironmentHandlers();
     registerVariableHandlers();
     registerSettingsHandlers();
+    registerDataTransferHandlers();
     registerResponseHandlers();
     console.log('IPC handlers registered');
     

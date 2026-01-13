@@ -66,14 +66,18 @@ export interface ElectronAPI {
   };
 
   importExport: {
-    exportWorkspace: (workspaceId: string) => Promise<string>;
-    importJSON: (json: string) => Promise<Workspace>;
-    importPostman: (json: string) => Promise<Workspace>;
-    importCurl: (curl: string) => Promise<Request>;
+    exportWorkspace: (workspaceId: string) => Promise<{ success: boolean; error?: string }>;
+    importWorkspace: () => Promise<{ success: boolean; data?: Workspace; error?: string }>;
   };
 
-  on: (channel: string, callback: (...args: any[]) => void) => void;
-  off: (channel: string, callback: (...args: any[]) => void) => void;
+  on: (
+    channel: IpcChannel,
+    callback: (...args: any[]) => void
+  ) => void;
+  off: (
+    channel: IpcChannel,
+    callback: (...args: any[]) => void
+  ) => void;
 }
 
 declare global {
