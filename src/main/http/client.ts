@@ -1,7 +1,6 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse, type Method } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import type { Request, Response, AuthType } from '../../shared/types';
-import app from 'electron'; // Just to have access to versions if needed, or remove if unused
+import type { Request, Response } from '../../shared/types';
 
 /**
  * Service to handle HTTP requests
@@ -16,11 +15,18 @@ export class HttpService {
     let error: any = null;
 
     try {
+      const headers = this.prepareHeaders(request);
+      const { data, contentType } = this.prepareBody(request);
+
+      if (contentType && !this.hasHeader(headers, 'Content-Type')) {
+        headers['Content-Type'] = contentType;
+      }
+
       const config: AxiosRequestConfig = {
         url: request.url,
         method: request.method as Method,
-        headers: this.prepareHeaders(request),
-        data: this.prepareBody(request),
+        headers,
+        data,
         timeout: 30000, // TODO: Make configurable from settings
         validateStatus: () => true, // Don't throw on error status codes
         transformResponse: [(data) => data], // Don't parse JSON automatically yet, we want raw body
@@ -64,12 +70,10 @@ export class HttpService {
       value: String(value),
     }));
 
-    // Calculate size (approximate)
+    // Prepare response body string
     const bodyStr = typeof response.data === 'string' 
       ? response.data 
       : JSON.stringify(response.data);
-    const size = Buffer.byteLength(bodyStr, 'utf8');
-
     return {
       _id: uuidv4(),
       type: 'Response',
@@ -109,26 +113,59 @@ export class HttpService {
   /**
    * Prepare body based on content type
    */
-  private prepareBody(request: Request): any {
-    if (!request.body) return undefined;
+  private prepareBody(request: Request): { data?: any; contentType?: string } {
+    if (!request.body || request.body.type === 'none') return {};
 
-    // TODO: Handle different body types (form-data, url-encoded, etc)
-    // For now, just return raw JSON/Text
-    if (request.body && typeof request.body === 'string') {
-        return request.body;
+    switch (request.body.type) {
+      case 'json':
+        return {
+          data: request.body.text ?? '',
+          contentType: 'application/json',
+        };
+      case 'raw':
+        return { data: request.body.text ?? '' };
+      case 'form-urlencoded': {
+        const searchParams = new URLSearchParams();
+        request.body.params?.forEach((param) => {
+          if (param.enabled && param.name) {
+            searchParams.append(param.name, param.value ?? '');
+          }
+        });
+        return {
+          data: searchParams.toString(),
+          contentType: 'application/x-www-form-urlencoded',
+        };
+      }
+      case 'form-data': {
+        const enabledParams =
+          request.body.params?.filter((param) => param.enabled && param.name) ?? [];
+
+        if (typeof FormData !== 'undefined') {
+          const formData = new FormData();
+          enabledParams.forEach((param) => {
+            formData.append(param.name, param.value ?? '');
+          });
+          return { data: formData };
+        }
+
+        const searchParams = new URLSearchParams();
+        enabledParams.forEach((param) => {
+          searchParams.append(param.name, param.value ?? '');
+        });
+
+        return {
+          data: searchParams.toString(),
+          contentType: 'application/x-www-form-urlencoded',
+        };
+      }
+      default:
+        return { data: request.body.text ?? '' };
     }
-    
-     // If the body structure from types.ts is more complex (e.g. { type: 'json', content: '...' })
-     // we need to adjust here. Assuming simple string or object for MVP based on current types context.
-     // Let's check types.ts if we need to be more specific. 
-     // For safety, let's assume it might be the object structure from the PRD/Types
-     
-     if (typeof request.body === 'object' && 'content' in request.body) {
-         // @ts-ignore
-         return request.body.content;
-     }
+  }
 
-    return request.body;
+  private hasHeader(headers: Record<string, string>, headerName: string): boolean {
+    const target = headerName.toLowerCase();
+    return Object.keys(headers).some((key) => key.toLowerCase() === target);
   }
 
   /**
