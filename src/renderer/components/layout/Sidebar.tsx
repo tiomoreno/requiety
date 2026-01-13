@@ -5,6 +5,8 @@ import { Button } from '../common/Button';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useData } from '../../hooks/useData';
 
+import { EnvironmentSelector } from '../environments/EnvironmentSelector';
+
 interface SidebarProps {
   onCreateWorkspace: () => void;
 }
@@ -46,6 +48,11 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
       <div className="p-4 space-y-4">
         {/* Workspace Selector */}
         <WorkspaceSelector onCreateWorkspace={onCreateWorkspace} />
+        
+        {/* Environment Selector */}
+        {activeWorkspace && (
+          <EnvironmentSelector workspaceId={activeWorkspace._id} />
+        )}
 
         {/* Action Buttons */}
         {activeWorkspace && (
