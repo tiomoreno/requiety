@@ -1,0 +1,186 @@
+// Shared TypeScript types for the API Client
+
+// ============================================================================
+// Base Types
+// ============================================================================
+
+export type DocumentType =
+  | 'Workspace'
+  | 'Folder'
+  | 'Request'
+  | 'Response'
+  | 'Environment'
+  | 'Variable'
+  | 'Settings';
+
+export interface BaseDocument {
+  _id: string;
+  type: DocumentType;
+  created: number;
+  modified: number;
+}
+
+// ============================================================================
+// Workspace
+// ============================================================================
+
+export interface Workspace extends BaseDocument {
+  type: 'Workspace';
+  name: string;
+}
+
+// ============================================================================
+// Folder
+// ============================================================================
+
+export interface Folder extends BaseDocument {
+  type: 'Folder';
+  name: string;
+  parentId: string; // workspace or folder ID
+  sortOrder: number;
+}
+
+// ============================================================================
+// Request
+// ============================================================================
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+
+export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw';
+
+export type AuthType = 'none' | 'basic' | 'bearer';
+
+export interface RequestHeader {
+  name: string;
+  value: string;
+  enabled: boolean;
+}
+
+export interface RequestBodyParam {
+  name: string;
+  value: string;
+  enabled: boolean;
+}
+
+export interface RequestBody {
+  type: BodyType;
+  text?: string; // for json and raw
+  params?: RequestBodyParam[]; // for form-urlencoded and form-data
+}
+
+export interface Authentication {
+  type: AuthType;
+  username?: string; // for basic
+  password?: string; // for basic
+  token?: string; // for bearer
+}
+
+export interface Request extends BaseDocument {
+  type: 'Request';
+  name: string;
+  url: string;
+  method: HttpMethod;
+  parentId: string; // folder or workspace ID
+  sortOrder: number;
+  headers: RequestHeader[];
+  body: RequestBody;
+  authentication: Authentication;
+}
+
+// ============================================================================
+// Response
+// ============================================================================
+
+export interface ResponseHeader {
+  name: string;
+  value: string;
+}
+
+export interface Response extends BaseDocument {
+  type: 'Response';
+  requestId: string;
+  statusCode: number;
+  statusMessage: string;
+  headers: ResponseHeader[];
+  body?: string; // in case we keep it in memory
+  bodyPath: string; // path to file with response body
+  elapsedTime: number; // milliseconds
+}
+
+// ============================================================================
+// Environment
+// ============================================================================
+
+export interface Environment extends BaseDocument {
+  type: 'Environment';
+  name: string;
+  workspaceId: string;
+  isActive: boolean;
+}
+
+// ============================================================================
+// Variable
+// ============================================================================
+
+export interface Variable extends BaseDocument {
+  type: 'Variable';
+  environmentId: string;
+  key: string;
+  value: string;
+  isSecret: boolean;
+}
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+export interface Settings extends BaseDocument {
+  _id: 'settings';
+  type: 'Settings';
+  
+  // HTTP Settings
+  timeout: number; // request timeout in ms
+  followRedirects: boolean;
+  validateSSL: boolean;
+  maxRedirects: number;
+  
+  // UI Settings
+  theme: 'light' | 'dark' | 'auto';
+  fontSize: number;
+  
+  // Storage
+  maxHistoryResponses: number; // keep last N responses
+}
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export interface SendRequestResult {
+  response: Response;
+  body: string;
+}
+
+// ============================================================================
+// UI State Types
+// ============================================================================
+
+export interface WorkspaceTreeItem {
+  id: string;
+  type: 'workspace' | 'folder' | 'request';
+  name: string;
+  parentId?: string;
+  children?: WorkspaceTreeItem[];
+  data?: Workspace | Folder | Request;
+}
+
+export interface TemplateRenderResult {
+  rendered: string;
+  errors: string[];
+}
