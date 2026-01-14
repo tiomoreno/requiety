@@ -2,13 +2,14 @@ import CodeMirror from '@uiw/react-codemirror';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
+import { javascript } from '@codemirror/lang-javascript';
 import { useSettings } from '../../contexts/SettingsContext';
 import React, { useEffect, useState } from 'react';
 
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
-  language?: 'json';
+  language?: 'json' | 'javascript';
   readOnly?: boolean;
 }
 
@@ -85,6 +86,8 @@ export function CodeEditor({
     ];
     if (language === 'json') {
       exts.push(json());
+    } else if (language === 'javascript') {
+      exts.push(javascript());
     }
     return exts;
   }, [language]);

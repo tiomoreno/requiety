@@ -7,9 +7,10 @@ interface TreeViewProps {
   forceExpand?: boolean;
   onRename?: (item: WorkspaceTreeItem, newName: string) => void;
   onMove?: (draggedId: string, targetId: string) => void;
+  onRun?: (targetId: string, targetName: string, type: 'folder' | 'workspace') => void;
 }
 
-export const TreeView = ({ items, forceExpand, onRename, onMove }: TreeViewProps) => {
+export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeViewProps) => {
   const { tree, selectedRequest, setSelectedRequest } = useData();
 
   const displayItems = items || tree;
@@ -37,6 +38,7 @@ export const TreeView = ({ items, forceExpand, onRename, onMove }: TreeViewProps
           onSelect={handleSelect}
           onRename={onRename}
           onMove={onMove}
+          onRun={onRun}
           selectedId={selectedRequest?._id}
           forceExpand={forceExpand}
         />
@@ -44,3 +46,4 @@ export const TreeView = ({ items, forceExpand, onRename, onMove }: TreeViewProps
     </div>
   );
 };
+

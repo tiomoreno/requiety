@@ -174,7 +174,7 @@ export const getFoldersByWorkspace = async (
 export const createRequest = async (
   data: Pick<
     Request,
-    'name' | 'url' | 'method' | 'parentId' | 'sortOrder' | 'headers' | 'body' | 'authentication'
+    'name' | 'url' | 'method' | 'parentId' | 'sortOrder' | 'headers' | 'body' | 'authentication' | 'assertions' | 'preRequestScript' | 'postRequestScript'
   >
 ): Promise<Request> => {
   const request: Request = {
@@ -188,6 +188,9 @@ export const createRequest = async (
     headers: data.headers,
     body: data.body,
     authentication: data.authentication,
+    assertions: data.assertions || [],
+    preRequestScript: data.preRequestScript,
+    postRequestScript: data.postRequestScript,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -196,12 +199,13 @@ export const createRequest = async (
   return await dbOperation<Request>((cb) => db.insert(request, cb));
 };
 
+
 export const updateRequest = async (
   id: string,
   data: Partial<
     Pick<
       Request,
-      'name' | 'url' | 'method' | 'sortOrder' | 'headers' | 'body' | 'authentication'
+      'name' | 'url' | 'method' | 'sortOrder' | 'headers' | 'body' | 'authentication' | 'assertions' | 'preRequestScript' | 'postRequestScript'
     >
   >
 ): Promise<Request> => {
@@ -245,6 +249,8 @@ export const duplicateRequest = async (id: string): Promise<Request> => {
     headers: original.headers,
     body: original.body,
     authentication: original.authentication,
+    preRequestScript: original.preRequestScript,
+    postRequestScript: original.postRequestScript,
   });
 };
 
@@ -304,7 +310,7 @@ export const getWorkspaceIdForRequest = async (requestId: string): Promise<strin
 export const createResponse = async (
   data: Pick<
     Response,
-    'requestId' | 'statusCode' | 'statusMessage' | 'headers' | 'bodyPath' | 'elapsedTime'
+    'requestId' | 'statusCode' | 'statusMessage' | 'headers' | 'bodyPath' | 'elapsedTime' | 'testResults'
   >
 ): Promise<Response> => {
   const response: Response = {
@@ -316,6 +322,7 @@ export const createResponse = async (
     headers: data.headers,
     bodyPath: data.bodyPath,
     elapsedTime: data.elapsedTime,
+    testResults: data.testResults,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -323,6 +330,7 @@ export const createResponse = async (
   const db = getDatabase('Response');
   return await dbOperation<Response>((cb) => db.insert(response, cb));
 };
+
 
 export const getResponseHistory = async (
   requestId: string,

@@ -6,8 +6,8 @@ import { Button } from '../common/Button';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { useData } from '../../hooks/useData';
 import { useSettings } from '../../contexts/SettingsContext';
-
 import { EnvironmentSelector } from '../environments/EnvironmentSelector';
+import { RunnerModal } from '../runner/RunnerModal';
 
 interface SidebarProps {
   onCreateWorkspace: () => void;
@@ -20,6 +20,18 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [creatingRequest, setCreatingRequest] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [runnerState, setRunnerState] = useState<{
+    isOpen: boolean;
+    targetId: string;
+    targetName: string;
+    type: 'folder' | 'workspace';
+  }>({
+    isOpen: false,
+    targetId: '',
+    targetName: '',
+    type: 'folder',
+  });
 
   const filteredTree = useMemo(() => filterTree(tree, searchQuery), [tree, searchQuery]);
 
@@ -37,17 +49,9 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
 
   const handleMove = async (draggedId: string, targetId: string) => {
     try {
-      // Determine if dragged item is request or folder
-      // We can check requests array from useData()? We restructured useData to expose requests/folders?
-      // Yes, Sidebar destructuring needs: const { folders, requests } = useData();
-      // But updateRequest is enough if we only support requests.
-      // To be robust:
       await updateRequest(draggedId, { parentId: targetId });
-      // If it fails (e.g. not found), we catch error.
-      // Ideally check type.
-    } catch (error) {
-       // Try updating folder if request update fails? Or explicitly check.
-       console.error('Failed to move item:', error);
+    } catch (error: any) {
+       console.error('Failed to move item (request attempt):', error);
        try {
            await updateFolder(draggedId, { parentId: targetId });
        } catch (innerError) {
@@ -80,6 +84,15 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
     } finally {
       setCreatingRequest(false);
     }
+  };
+
+  const handleRun = (targetId: string, targetName: string, type: 'folder' | 'workspace') => {
+    setRunnerState({
+      isOpen: true,
+      targetId,
+      targetName,
+      type,
+    });
   };
 
   return (
@@ -170,9 +183,19 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
             forceExpand={!!searchQuery}
             onRename={handleRename}
             onMove={handleMove}
+            onRun={handleRun}
           />
         </div>
       )}
+
+      {/* Runner Modal */}
+      <RunnerModal
+        isOpen={runnerState.isOpen}
+        onClose={() => setRunnerState({ ...runnerState, isOpen: false })}
+        targetId={runnerState.targetId}
+        targetName={runnerState.targetName}
+        type={runnerState.type}
+      />
 
       {/* Settings Button */}
       <div className="p-2 border-t border-gray-200 dark:border-gray-700">

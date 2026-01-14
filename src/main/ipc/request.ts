@@ -16,6 +16,8 @@ import {
 import { HttpService } from '../http/client';
 import { saveResponseBody } from '../utils/file-manager';
 import { TemplateEngine } from '../utils/template-engine';
+import { AssertionService } from '../services/assertion.service';
+import { RequestExecutionService } from '../services/request.execution.service';
 
 /**
  * Register all request IPC handlers
@@ -150,48 +152,12 @@ export const registerRequestHandlers = (): void => {
         throw new Error('Request not found');
       }
 
-      // 1. Resolve Environment Variables
-      let variables: any[] = [];
-      const workspaceId = await getWorkspaceIdForRequest(id);
-      
-      if (workspaceId) {
-        const activeEnv = await getActiveEnvironment(workspaceId);
-        if (activeEnv) {
-          variables = await getVariablesByEnvironment(activeEnv._id);
-        }
-      }
+      // Execute request using shared service
+      const response = await RequestExecutionService.executeRequest(request);
 
-      // 2. Render Request
-      const renderedRequest = TemplateEngine.renderRequest(request, variables);
-
-      // 3. Send Request
-      const httpService = new HttpService();
-      const response = await httpService.sendRequest(renderedRequest);
-
-      // 4. Save Response
-      // Save body to file
-      const bodyPath = await saveResponseBody(
-        response._id,
-        response.body || ''
-      );
-
-      // Create response record in DB
-      const savedResponse = await createResponse({
-        requestId: request._id,
-        statusCode: response.statusCode,
-        statusMessage: response.statusMessage,
-        headers: response.headers,
-        bodyPath,
-        elapsedTime: response.elapsedTime,
-      });
-
-      // Return the saved response with the body content
       return { 
         success: true, 
-        data: {
-          ...savedResponse,
-          body: response.body
-        } 
+        data: response
       };
     } catch (error) {
       console.error('Error sending request:', error);
@@ -202,3 +168,5 @@ export const registerRequestHandlers = (): void => {
     }
   });
 };
+
+

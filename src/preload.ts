@@ -113,6 +113,21 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT),
   },
 
+  // Runner operations
+  runner: {
+    start: (targetId: string, type: 'folder' | 'workspace') =>
+      ipcRenderer.invoke(IPC_CHANNELS.RUNNER_START, { targetId, type }),
+    stop: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.RUNNER_STOP),
+    onProgress: (callback: (progress: any) => void) => {
+      const subscription = (_: any, progress: any) => callback(progress);
+      ipcRenderer.on(IPC_CHANNELS.RUNNER_ON_PROGRESS, subscription);
+      return () => {
+        ipcRenderer.removeListener(IPC_CHANNELS.RUNNER_ON_PROGRESS, subscription);
+      };
+    },
+  },
+
   // Event listeners
   on: (
     channel: typeof IPC_CHANNELS.RESPONSE_RECEIVED | typeof IPC_CHANNELS.REQUEST_SENT | typeof IPC_CHANNELS.ERROR,

@@ -60,6 +60,13 @@ export const IPC_CHANNELS = {
   RESPONSE_RECEIVED: 'event:response-received',
   REQUEST_SENT: 'event:request-sent',
   ERROR: 'event:error',
+  
+  // Runner
+  RUNNER_START: 'runner:start',
+  RUNNER_STOP: 'runner:stop',
+  RUNNER_ON_PROGRESS: 'runner:on-progress',
+  RUNNER_ON_COMPLETE: 'runner:on-complete',
 } as const;
+
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];

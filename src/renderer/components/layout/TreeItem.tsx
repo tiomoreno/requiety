@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import type { WorkspaceTreeItem } from '../../../shared/types';
+import { ContextMenu } from '../common/ContextMenu';
 
 interface TreeItemProps {
   item: WorkspaceTreeItem;
   onSelect: (item: WorkspaceTreeItem) => void;
   onRename?: (item: WorkspaceTreeItem, newName: string) => void;
   onMove?: (draggedId: string, targetId: string) => void;
+  onRun?: (targetId: string, targetName: string, type: 'folder' | 'workspace') => void;
   selectedId?: string;
   forceExpand?: boolean;
 }
 
-export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceExpand }: TreeItemProps) => {
+export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, forceExpand }: TreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   
   useEffect(() => {
     if (forceExpand) {
@@ -39,6 +42,14 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceEx
     if (onRename && !isEditing) {
       setIsEditing(true);
       setEditName(item.name);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isFolder) {
+      setContextMenu({ x: e.clientX, y: e.clientY });
     }
   };
 
@@ -117,13 +128,14 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceEx
     <div>
       <div
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
         onDoubleClick={handleDoubleClick}
         draggable
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors border ${
+        className={`group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors border ${
           isDragOver 
             ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/40' 
             : 'border-transparent' // Default border
@@ -188,7 +200,42 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceEx
         ) : (
           <span className="text-sm truncate flex-1">{item.name}</span>
         )}
+        
+        {isFolder && onRun && (
+          <button
+            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500 hover:text-green-600 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRun(item.id, item.name, 'folder');
+            }}
+            title="Run Folder"
+          >
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              label: 'Run Folder',
+              onClick: () => onRun && onRun(item.id, item.name, 'folder'),
+              icon: (
+                <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+              ),
+            },
+            // Add other actions like Rename, Delete later if needed
+          ]}
+        />
+      )}
 
       {isFolder && hasChildren && isExpanded && (
         <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1">
@@ -199,6 +246,7 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, selectedId, forceEx
               onSelect={onSelect}
               onRename={onRename}
               onMove={onMove}
+              onRun={onRun}
               selectedId={selectedId}
               forceExpand={forceExpand}
             />

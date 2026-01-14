@@ -85,6 +85,9 @@ export interface Request extends BaseDocument {
   headers: RequestHeader[];
   body: RequestBody;
   authentication: Authentication;
+  assertions?: Assertion[];
+  preRequestScript?: string;
+  postRequestScript?: string;
 }
 
 // ============================================================================
@@ -105,6 +108,7 @@ export interface Response extends BaseDocument {
   body?: string; // in case we keep it in memory
   bodyPath: string; // path to file with response body
   elapsedTime: number; // milliseconds
+  testResults?: TestResult;
 }
 
 // ============================================================================
@@ -183,4 +187,77 @@ export interface WorkspaceTreeItem {
 export interface TemplateRenderResult {
   rendered: string;
   errors: string[];
+}
+
+// ============================================================================
+// Assertions & Testing
+// ============================================================================
+
+export type AssertionSource = 'status' | 'header' | 'jsonBody' | 'responseTime';
+
+export type AssertionOperator = 
+  | 'equals' 
+  | 'notEquals' 
+  | 'contains' 
+  | 'notContains' 
+  | 'greaterThan' 
+  | 'lessThan' 
+  | 'exists' 
+  | 'notExists'
+  | 'isNull'
+  | 'isNotNull';
+
+export interface Assertion {
+  id: string;
+  source: AssertionSource;
+  property?: string; // e.g. "Content-Type" for header, or JSON path for body
+  operator: AssertionOperator;
+  value?: string; // Expected value
+  enabled: boolean;
+}
+
+export interface AssertionResult {
+  assertionId: string;
+  status: 'pass' | 'fail';
+  error?: string; // processing error
+  actualValue?: any;
+  expectedValue?: any;
+}
+
+export interface TestResult {
+  passed: number;
+  failed: number;
+  total: number;
+  results: AssertionResult[];
+}
+
+// ============================================================================
+// Runner
+// ============================================================================
+
+export type RunnerStatus = 'idle' | 'running' | 'completed' | 'stopped' | 'error';
+
+export interface RunProgress {
+  total: number;
+  completed: number;
+  currentRequestName: string;
+  passed: number;
+  failed: number;
+}
+
+export interface CollectionRunResult {
+  status: RunnerStatus;
+  totalRequests: number;
+  passedRequests: number;
+  failedRequests: number; // Requests with at least one failed assertion
+  startTime: number;
+  endTime: number;
+  results: {
+    requestId: string;
+    requestName: string;
+    status: 'pass' | 'fail' | 'error';
+    statusCode?: number;
+    duration: number;
+    assertionResults?: TestResult;
+  }[];
 }
