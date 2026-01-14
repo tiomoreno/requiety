@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Request } from '../../../shared/types';
 import { HeadersEditor } from './editors/HeadersEditor';
 import { BodyEditor } from './editors/BodyEditor';
 import { AuthEditor } from './editors/AuthEditor';
 import { AssertionsEditor } from './editors/AssertionsEditor';
 import { ScriptEditor } from './editors/ScriptEditor';
+
+import { WebSocketEditor } from './editors/WebSocketEditor';
+import { mergeAutoHeaders } from '../../utils/header-utils';
 
 interface RequestTabsProps {
   request: Request;
@@ -17,6 +20,32 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('params');
   const [activeScriptType, setActiveScriptType] = useState<'pre' | 'post'>('pre');
 
+  const handleUpdate = (field: keyof Request, value: any) => {
+    onRequestUpdate({ ...request, [field]: value });
+  };
+
+  // Merge auto-headers when request changes or loads
+  useEffect(() => {
+    const merged = mergeAutoHeaders(request.headers || []);
+    // Only update if there's a difference to avoid infinite loops
+    // Simple length check + check if auto headers are present
+    const hasAutoHeaders = request.headers?.some(h => h.isAuto);
+    if (!hasAutoHeaders || request.headers?.length !== merged.length) {
+       handleUpdate('headers', merged);
+    }
+  }, [request._id]); // Re-run when switching requests, but be careful about infinite loops if we depend on request.headers
+
+
+  if (request.method === 'WS') {
+    return (
+      <WebSocketEditor
+        requestId={request._id}
+        url={request.url}
+        onUrlChange={(url) => handleUpdate('url', url)}
+      />
+    );
+  }
+
   const tabs: { id: TabType; label: string }[] = [
     { id: 'params', label: 'Params' },
     { id: 'headers', label: `Headers ${request.headers ? `(${request.headers.length})` : ''}` },
@@ -25,10 +54,6 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
     { id: 'scripts', label: 'Scripts' },
     { id: 'tests', label: `Tests ${request.assertions && request.assertions.length > 0 ? `(${request.assertions.length})` : ''}` },
   ];
-
-  const handleUpdate = (field: keyof Request, value: any) => {
-    onRequestUpdate({ ...request, [field]: value });
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -70,6 +95,8 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
           <BodyEditor
             body={request.body || { type: 'none' }}
             onChange={(body) => handleUpdate('body', body)}
+            url={request.url}
+            headers={request.headers || []}
           />
         )}
 

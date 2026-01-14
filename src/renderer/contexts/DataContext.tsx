@@ -13,7 +13,7 @@ interface DataContextType {
   error: string | null;
   setSelectedRequest: (request: Request | null) => void;
   createFolder: (name: string, parentId: string) => Promise<Folder>;
-  updateFolder: (id: string, data: { name?: string }) => Promise<void>;
+  updateFolder: (id: string, data: Partial<Folder>) => Promise<void>;
   deleteFolder: (id: string) => Promise<void>;
   createRequest: (name: string, parentId: string) => Promise<Request>;
   updateRequest: (id: string, data: Partial<Request>) => Promise<void>;
@@ -94,11 +94,25 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     }
   };
 
-  const updateFolder = async (id: string, data: { name?: string }): Promise<void> => {
+  const updateFolder = async (id: string, data: Partial<Folder>): Promise<void> => {
     try {
       setError(null);
-      const updated = await folderService.update(id, data);
-      setFolders((prev) => prev.map((f) => (f._id === id ? updated : f)));
+
+      // Handle move if parentId is provided
+      if (data.parentId !== undefined) {
+        const moved = await folderService.move(id, data.parentId);
+        setFolders((prev) => prev.map((f) => (f._id === id ? moved : f)));
+      }
+
+      // Handle scalar updates
+      const updateData: { name?: string; sortOrder?: number } = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
+
+      if (Object.keys(updateData).length > 0) {
+        const updated = await folderService.update(id, updateData);
+        setFolders((prev) => prev.map((f) => (f._id === id ? updated : f)));
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update folder';
       setError(message);

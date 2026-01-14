@@ -45,6 +45,7 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
         <div className="w-8 py-2 px-3 text-center"></div>
         <div className="flex-1 py-2 px-3">Key</div>
         <div className="flex-1 py-2 px-3">Value</div>
+        <div className="flex-1 py-2 px-3">Description</div>
         <div className="w-8 py-2 px-3"></div>
       </div>
       
@@ -57,7 +58,10 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                 type="checkbox"
                 checked={header.enabled}
                 onChange={(e) => handleChange(index, 'enabled', e.target.checked)}
-                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
+                className={`w-4 h-4 text-primary-600 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 ${
+                  header.isAuto && header.name === 'Cache-Control' ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                disabled={header.isAuto && header.name === 'Cache-Control'}
               />
             </div>
             
@@ -68,17 +72,34 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                 value={header.name}
                 onChange={(e) => handleChange(index, 'name', e.target.value)}
                 placeholder="Key"
-                className="w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400"
+                className={`w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm ${
+                  header.isAuto ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed' : 'text-gray-900 dark:text-gray-100'
+                } placeholder-gray-400`}
+                readOnly={header.isAuto}
               />
             </div>
             
             {/* Value Input */}
-            <div className="flex-1 relative">
+              <div className="flex-1 relative">
               <input
                 type="text"
                 value={header.value}
                 onChange={(e) => handleChange(index, 'value', e.target.value)}
                 placeholder="Value"
+                className={`w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm ${
+                  header.isAuto ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed' : 'text-gray-900 dark:text-gray-100'
+                } placeholder-gray-400`}
+                readOnly={header.isAuto}
+              />
+            </div>
+
+            {/* Description Input */}
+            <div className="flex-1 border-l border-gray-100 dark:border-gray-800 relative">
+              <input
+                type="text"
+                value={header.description || ''}
+                onChange={(e) => handleChange(index, 'description', e.target.value)}
+                placeholder="Description"
                 className="w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400"
               />
             </div>
@@ -88,7 +109,7 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                {/* Only show delete if it's not the only empty row, or clearer logic: show delete button */}
                <button 
                  onClick={() => handleRemove(index)}
-                 className="text-gray-400 hover:text-red-500"
+                 className={`text-gray-400 hover:text-red-500 ${header.isAuto ? 'invisible' : ''}`}
                  title="Remove header"
                >
                  ×

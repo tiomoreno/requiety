@@ -158,6 +158,21 @@ export class HttpService {
           contentType: 'application/x-www-form-urlencoded',
         };
       }
+      case 'graphql': {
+        const query = request.body.graphql?.query || '';
+        let variables = {};
+        try {
+          if (request.body.graphql?.variables) {
+            variables = JSON.parse(request.body.graphql.variables);
+          }
+        } catch (e) {
+          console.warn('Invalid GraphQL variables JSON', e);
+        }
+        return {
+          data: JSON.stringify({ query, variables }),
+          contentType: 'application/json',
+        };
+      }
       default:
         return { data: request.body.text ?? '' };
     }

@@ -50,6 +50,13 @@ export class TemplateEngine {
              if (rendered.body.text) {
                  rendered.body.text = this.render(rendered.body.text, context);
              }
+         } else if (rendered.body.type === 'graphql' && rendered.body.graphql) {
+             if (rendered.body.graphql.query) {
+                 rendered.body.graphql.query = this.render(rendered.body.graphql.query, context);
+             }
+             if (rendered.body.graphql.variables) {
+                 rendered.body.graphql.variables = this.render(rendered.body.graphql.variables, context);
+             }
          }
          // TODO: Handle form-data logic if/when implemented
     }

@@ -8,7 +8,7 @@ interface RequestUrlBarProps {
   onSend: () => void;
 }
 
-const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS', 'WS'];
 
 export function RequestUrlBar({
   request,

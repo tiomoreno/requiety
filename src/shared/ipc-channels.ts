@@ -66,6 +66,15 @@ export const IPC_CHANNELS = {
   RUNNER_STOP: 'runner:stop',
   RUNNER_ON_PROGRESS: 'runner:on-progress',
   RUNNER_ON_COMPLETE: 'runner:on-complete',
+  
+  // GraphQL
+  GRAPHQL_INTROSPECT: 'graphql:introspect',
+  
+  // WebSocket
+  WS_CONNECT: 'ws:connect',
+  WS_DISCONNECT: 'ws:disconnect',
+  WS_SEND: 'ws:send',
+  WS_EVENT: 'ws:event',
 } as const;
 
 

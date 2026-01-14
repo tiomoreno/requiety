@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['fsevents'],
+      external: ['fsevents', 'bufferutil', 'utf-8-validate'],
     },
   },
 });

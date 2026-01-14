@@ -17,6 +17,19 @@ export function ResponseTabs({ response }: ResponseTabsProps) {
     return contentType?.value.includes('application/json');
   }, [response.headers]);
 
+  const formattedBody = useMemo(() => {
+    if (!response.body) return '';
+    if (isJson) {
+      try {
+        const parsed = JSON.parse(response.body);
+        return JSON.stringify(parsed, null, 2);
+      } catch (e) {
+        return response.body;
+      }
+    }
+    return response.body;
+  }, [response.body, isJson]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Tabs */}
@@ -58,7 +71,7 @@ export function ResponseTabs({ response }: ResponseTabsProps) {
         {activeTab === 'body' && (
           isJson ? (
             <CodeEditor
-              value={response.body || ''}
+              value={formattedBody}
               language="json"
               readOnly={true}
               onChange={() => {}}

@@ -128,6 +128,24 @@ contextBridge.exposeInMainWorld('api', {
     },
   },
 
+  // GraphQL
+  graphql: {
+    introspect: (url: string, headers: any): Promise<{ success: boolean; data?: any; error?: string }> =>
+      ipcRenderer.invoke(IPC_CHANNELS.GRAPHQL_INTROSPECT, { url, headers }),
+  },
+
+  // WebSocket
+  ws: {
+    connect: (requestId: string, url: string) => ipcRenderer.send(IPC_CHANNELS.WS_CONNECT, { requestId, url }),
+    disconnect: (requestId: string) => ipcRenderer.send(IPC_CHANNELS.WS_DISCONNECT, { requestId }),
+    send: (requestId: string, message: string) => ipcRenderer.send(IPC_CHANNELS.WS_SEND, { requestId, message }),
+    onEvent: (callback: (payload: any) => void) => {
+        const subscription = (_: any, payload: any) => callback(payload);
+        ipcRenderer.on(IPC_CHANNELS.WS_EVENT, subscription);
+        return () => ipcRenderer.removeListener(IPC_CHANNELS.WS_EVENT, subscription);
+    }
+  },
+
   // Event listeners
   on: (
     channel: typeof IPC_CHANNELS.RESPONSE_RECEIVED | typeof IPC_CHANNELS.REQUEST_SENT | typeof IPC_CHANNELS.ERROR,

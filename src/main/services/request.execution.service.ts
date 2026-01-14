@@ -3,7 +3,8 @@ import {
   Request, 
   Response, 
   TestResult,
-  Variable
+  Variable,
+  RequestHeader
 } from '../../shared/types';
 import {
   getWorkspaceIdForRequest,
@@ -53,8 +54,26 @@ export class RequestExecutionService {
       // 3. Render Request
       const renderedRequest = TemplateEngine.renderRequest(request, variables);
 
-      // 4. Send Request
+      // 4. Send Request (with auto headers calculation)
       const httpService = new HttpService();
+      
+      // Calculate final headers (Host, etc)
+      if (renderedRequest.headers) {
+         renderedRequest.headers = renderedRequest.headers.map((h: RequestHeader) => {
+           if (h.isAuto && h.enabled) {
+              if (h.name === 'Host') {
+                 try {
+                   const url = new URL(renderedRequest.url);
+                   return { ...h, value: url.host };
+                 } catch (e) {
+                   return h; // Fallback if URL is invalid
+                 }
+              }
+           }
+           return h;
+         });
+      }
+
       const rawResponse = await httpService.sendRequest(renderedRequest);
 
       // 5. Run Post-request Script

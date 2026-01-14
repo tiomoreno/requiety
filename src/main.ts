@@ -13,6 +13,8 @@ import { registerSettingsHandlers } from './main/ipc/settings';
 import { registerResponseHandlers } from './main/ipc/response';
 import { registerDataTransferHandlers } from './main/ipc/data-transfer';
 import { registerRunnerHandlers } from './main/ipc/runner';
+import { registerWebSocketHandlers } from './main/ipc/websocket';
+import { WebSocketService } from './main/services/websocket.service';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -32,6 +34,9 @@ const createWindow = () => {
       nodeIntegration: false,
     },
   });
+
+  // Set window for WebSocket Service
+  WebSocketService.setWindow(mainWindow);
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -73,6 +78,7 @@ const initializeApp = async () => {
     registerDataTransferHandlers();
     registerResponseHandlers();
     registerRunnerHandlers();
+    registerWebSocketHandlers();
     console.log('IPC handlers registered');
     
     console.log('Application initialized successfully');

@@ -3,14 +3,16 @@ import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { json } from '@codemirror/lang-json';
 import { javascript } from '@codemirror/lang-javascript';
+import { graphql } from 'cm6-graphql';
 import { useSettings } from '../../contexts/SettingsContext';
 import React, { useEffect, useState } from 'react';
 
 interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
-  language?: 'json' | 'javascript';
+  language?: 'json' | 'javascript' | 'graphql';
   readOnly?: boolean;
+  schema?: any; // Using any for now to avoid explicit GraphQL dependency if not strictly needed, but better to import types.
 }
 
 // Custom theme configuration
@@ -46,6 +48,7 @@ export function CodeEditor({
   onChange,
   language = 'json',
   readOnly = false,
+  schema,
 }: CodeEditorProps) {
   const { settings } = useSettings();
   
@@ -88,9 +91,11 @@ export function CodeEditor({
       exts.push(json());
     } else if (language === 'javascript') {
       exts.push(javascript());
+    } else if (language === 'graphql') {
+      exts.push(graphql(schema));
     }
     return exts;
-  }, [language]);
+  }, [language, schema]);
 
   return (
     <div className="h-full w-full text-sm">

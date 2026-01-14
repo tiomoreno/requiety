@@ -158,13 +158,59 @@ export const moveFolder = async (
   return await dbOperation<Folder>((cb) => db.findOne({ _id: id }, cb));
 };
 
+// Helper to get all folder IDs in a workspace (recursive)
+const getWorkspaceFolderIds = async (workspaceId: string): Promise<string[]> => {
+  const db = getDatabase('Folder');
+  let allIds = [workspaceId];
+  let currentLevelIds = [workspaceId];
+
+  while (currentLevelIds.length > 0) {
+    const children = await dbOperation<Folder[]>((cb) =>
+      db.find({ parentId: { $in: currentLevelIds } }, cb)
+    );
+    
+    if (children.length === 0) break;
+    
+    const childIds = children.map(f => f._id);
+    allIds = [...allIds, ...childIds];
+    currentLevelIds = childIds;
+  }
+  
+  return allIds;
+};
+
 export const getFoldersByWorkspace = async (
   workspaceId: string
 ): Promise<Folder[]> => {
   const db = getDatabase('Folder');
-  return await dbOperation<Folder[]>((cb) =>
-    db.find({ parentId: workspaceId }, cb)
-  );
+  
+  // Get all related IDs (workspace + all subfolders)
+  const allParentIds = await getWorkspaceFolderIds(workspaceId);
+  
+  // Return all folders that are children of any of these parents
+  // (This effectively returns all folders in the workspace tree)
+  // We exclude folders that are parenting strictly to something else outside (unlikely)
+  // Actually, we just want to return all folders found in the traversal above (excluding workspace itself which is not a folder)
+  
+  // Optimization: The traversal ALREADY fetched the folders.
+  // But to keep it simple and consistent with NeDB structure, we can just re-query or refactor helper to return objects.
+  
+  // Revised helper approach:
+  let allFolders: Folder[] = [];
+  let currentParentIds = [workspaceId];
+  
+  while (currentParentIds.length > 0) {
+     const children = await dbOperation<Folder[]>((cb) =>
+      db.find({ parentId: { $in: currentParentIds } }, cb)
+    );
+    
+    if (children.length === 0) break;
+    
+    allFolders = [...allFolders, ...children];
+    currentParentIds = children.map(f => f._id);
+  }
+  
+  return allFolders;
 };
 
 // ============================================================================
@@ -258,8 +304,13 @@ export const getRequestsByWorkspace = async (
   workspaceId: string
 ): Promise<Request[]> => {
   const db = getDatabase('Request');
+  
+  // 1. Get all potential parent IDs (workspace + all folders)
+  const allFolderIds = await getWorkspaceFolderIds(workspaceId);
+  
+  // 2. Find all requests that belong to any of these parents
   return await dbOperation<Request[]>((cb) =>
-    db.find({ parentId: workspaceId }, cb)
+    db.find({ parentId: { $in: allFolderIds } }, cb)
   );
 };
 

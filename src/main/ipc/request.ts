@@ -18,6 +18,7 @@ import { saveResponseBody } from '../utils/file-manager';
 import { TemplateEngine } from '../utils/template-engine';
 import { AssertionService } from '../services/assertion.service';
 import { RequestExecutionService } from '../services/request.execution.service';
+import { GraphQLService } from '../services/graphql.service';
 
 /**
  * Register all request IPC handlers
@@ -161,6 +162,20 @@ export const registerRequestHandlers = (): void => {
       };
     } catch (error) {
       console.error('Error sending request:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  });
+
+  // GraphQL Introspection
+  ipcMain.handle(IPC_CHANNELS.GRAPHQL_INTROSPECT, async (_, { url, headers }: { url: string; headers: any }) => {
+    try {
+      const data = await GraphQLService.introspect(url, headers);
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error in GraphQL introspection:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,23 +1,30 @@
-import { RequestBody, BodyType } from '../../../../shared/types';
+import { RequestBody, BodyType, RequestHeader } from '../../../../shared/types';
 import { CodeEditor } from '../../common/CodeEditor';
+import { GraphQLEditor } from './GraphQLEditor';
 
 interface BodyEditorProps {
   body: RequestBody;
   onChange: (body: RequestBody) => void;
+  url: string;
+  headers: RequestHeader[];
 }
 
-export function BodyEditor({ body, onChange }: BodyEditorProps) {
+export function BodyEditor({ body, onChange, url, headers }: BodyEditorProps) {
   const handleTypeChange = (type: BodyType) => {
     onChange({ ...body, type });
   };
 
   const handleContentChange = (text: string) => {
-    onChange({ ...body, text }); // Assuming 'text' property stores the raw content for JSON/Text types
+    onChange({ ...body, text });
+  };
+
+  const handleGraphQLChange = (query: string, variables: string) => {
+     onChange({
+       ...body,
+       graphql: { query, variables }
+     });
   };
   
-  // Note: shared/types defines BodyType as 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw'
-  // And RequestBody as { type: BodyType, text?: string, params?: RequestBodyParam[] }
-
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Toolbar */}
@@ -32,6 +39,7 @@ export function BodyEditor({ body, onChange }: BodyEditorProps) {
              <option value="none">None</option>
              <option value="json">JSON</option>
              <option value="raw">Text (Raw)</option>
+             <option value="graphql">GraphQL</option>
              {/* <option value="form-urlencoded">Form URL Encoded</option> */}
              {/* <option value="form-data">Multipart Form</option> */}
            </select>
@@ -50,6 +58,16 @@ export function BodyEditor({ body, onChange }: BodyEditorProps) {
              value={body.text || ''}
              onChange={handleContentChange}
              language="json"
+           />
+        </div>
+      ) : body.type === 'graphql' ? (
+        <div className="flex-1 relative border-t border-gray-200 dark:border-gray-800">
+           <GraphQLEditor
+             query={body.graphql?.query || ''}
+             variables={body.graphql?.variables || ''}
+             url={url}
+             headers={headers}
+             onChange={handleGraphQLChange} 
            />
         </div>
       ) : (

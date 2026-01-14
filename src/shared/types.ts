@@ -44,9 +44,16 @@ export interface Folder extends BaseDocument {
 // Request
 // ============================================================================
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'WS';
 
-export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw';
+export interface WebSocketMessage {
+  id: string;
+  type: 'incoming' | 'outgoing' | 'info' | 'error';
+  data: string;
+  timestamp: number;
+}
+
+export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw' | 'graphql';
 
 export type AuthType = 'none' | 'basic' | 'bearer';
 
@@ -54,6 +61,8 @@ export interface RequestHeader {
   name: string;
   value: string;
   enabled: boolean;
+  isAuto?: boolean;
+  description?: string;
 }
 
 export interface RequestBodyParam {
@@ -66,6 +75,10 @@ export interface RequestBody {
   type: BodyType;
   text?: string; // for json and raw
   params?: RequestBodyParam[]; // for form-urlencoded and form-data
+  graphql?: {
+    query: string;
+    variables: string;
+  };
 }
 
 export interface Authentication {
