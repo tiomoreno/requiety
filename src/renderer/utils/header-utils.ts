@@ -33,10 +33,10 @@ export const mergeAutoHeaders = (currentHeaders: RequestHeader[]): RequestHeader
     if (existing) {
       // For Cache-Control, always enforce enabled=true
       if (autoHeader.name === 'Cache-Control') {
-        return { ...autoHeader, enabled: true };
+        return { ...autoHeader, enabled: true, description: existing.description };
       }
       // For others, keep the user's enabled preference, but reset value if it somehow changed (it shouldn't if read-only)
-      return { ...autoHeader, enabled: existing.enabled };
+      return { ...autoHeader, enabled: existing.enabled, description: existing.description };
     }
     
     return autoHeader;

@@ -185,7 +185,7 @@ export const getFoldersByWorkspace = async (
   const db = getDatabase('Folder');
   
   // Get all related IDs (workspace + all subfolders)
-  const allParentIds = await getWorkspaceFolderIds(workspaceId);
+  // Revised logic to collect folders directly
   
   // Return all folders that are children of any of these parents
   // (This effectively returns all folders in the workspace tree)
