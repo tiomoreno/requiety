@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import * as ReactWindow from 'react-window';
 import { VirtualTreeItem } from './VirtualTreeItem';
 import { useData } from '../../hooks/useData';
-import { flattenTree, FlatTreeItem } from '../../utils/tree-builder';
+import { flattenTree } from '../../utils/tree-builder';
+import type { FlatTreeItem } from '../../utils/tree-builder';
 import type { WorkspaceTreeItem } from '../../../shared/types';
 
 interface TreeViewProps {
