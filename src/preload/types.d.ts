@@ -10,7 +10,13 @@ import type {
   Settings,
   SendRequestResult,
   ApiResponse,
-} from './shared/types';
+  Assertion,
+  OAuth2Config,
+  OAuth2Token,
+  RunProgress,
+  CollectionRunResult,
+} from '../shared/types';
+import type { IpcChannel } from '../shared/ipc-channels';
 
 export interface ElectronAPI {
   workspace: {
@@ -39,13 +45,17 @@ export interface ElectronAPI {
     getById: (id: string) => Promise<ApiResponse<Request | null>>;
   };
 
+  assertions: {
+    update: (requestId: string, assertions: Assertion[]) => Promise<ApiResponse<Request>>;
+  };
+
   graphql: {
-    introspect: (url: string, headers: Record<string, string>) => Promise<ApiResponse<any>>;
+    introspect: (url: string, headers: Record<string, string>) => Promise<ApiResponse<unknown>>;
   };
 
   grpc: {
     selectProtoFile: () => Promise<ApiResponse<string | null>>;
-    parseProto: (filePath: string) => Promise<ApiResponse<any>>;
+    parseProto: (filePath: string) => Promise<ApiResponse<unknown>>;
   };
 
   sync: {
@@ -91,15 +101,30 @@ export interface ElectronAPI {
   importExport: {
     exportWorkspace: (workspaceId: string) => Promise<{ success: boolean; error?: string }>;
     importWorkspace: () => Promise<{ success: boolean; data?: Workspace; error?: string }>;
+    importPostman: () => Promise<{ success: boolean; data?: Workspace; error?: string }>;
+    importCurl: (curlCommand: string, parentId: string) => Promise<{ success: boolean; data?: Request; error?: string }>;
+  };
+
+  runner: {
+    start: (targetId: string, type: 'folder' | 'workspace') => Promise<CollectionRunResult>;
+    stop: () => Promise<void>;
+    onProgress: (callback: (progress: RunProgress) => void) => () => void;
+  };
+
+  ws: {
+    connect: (requestId: string, url: string) => void;
+    disconnect: (requestId: string) => void;
+    send: (requestId: string, message: string) => void;
+    onEvent: (callback: (payload: { requestId: string; type: string; data?: string; timestamp: number }) => void) => () => void;
   };
 
   on: (
     channel: IpcChannel,
-    callback: (...args: any[]) => void
+    callback: (...args: unknown[]) => void
   ) => void;
   off: (
     channel: IpcChannel,
-    callback: (...args: any[]) => void
+    callback: (...args: unknown[]) => void
   ) => void;
 }
 

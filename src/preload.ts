@@ -120,6 +120,10 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke(IPC_CHANNELS.DATA_EXPORT, workspaceId),
     importWorkspace: () =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT),
+    importPostman: (): Promise<ApiResponse<Workspace>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.IMPORT_POSTMAN),
+    importCurl: (curlCommand: string, parentId: string): Promise<ApiResponse<Request>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.IMPORT_CURL, curlCommand, parentId),
   },
 
   // Runner operations

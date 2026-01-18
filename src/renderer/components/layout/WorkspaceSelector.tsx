@@ -96,6 +96,22 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
                 Import Workspace
               </button>
 
+              <button
+                onClick={async () => {
+                   setIsOpen(false);
+                   const success = await dataTransferService.importPostman();
+                   if (success) {
+                     refreshWorkspaces();
+                   }
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2 rounded-md"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13.527.099C6.955-.744.942 3.9.099 10.473c-.843 6.572 3.8 12.584 10.373 13.428 6.573.843 12.587-3.801 13.428-10.374C24.744 6.955 20.101.943 13.527.099zm2.471 7.485a.855.855 0 0 0-.593.25l-4.453 4.453-.307-.307-.643-.643c4.389-4.376 5.18-4.418 5.996-3.753zm-4.863 4.861l4.44-4.44a.62.62 0 1 1 .847.903l-4.699 4.125-.588-.588zm.33.694l-1.1.238a.06.06 0 0 1-.067-.032.06.06 0 0 1 .01-.073l.645-.645.512.512zm-2.803-.459l1.172-1.172.879.878-1.979.426a.074.074 0 0 1-.085-.039.072.072 0 0 1 .013-.093zm-3.646 6.058a.076.076 0 0 1-.107 0l-.292-.293a.076.076 0 0 1 0-.107l1.602-1.601a.076.076 0 0 1 .107 0l.293.292a.075.075 0 0 1 0 .107l-1.603 1.602zm1.262-1.262a.07.07 0 0 1-.099 0l-.265-.265a.07.07 0 0 1 0-.099l1.595-1.596a.07.07 0 0 1 .1 0l.264.265a.07.07 0 0 1 0 .099l-1.595 1.596z"/>
+                </svg>
+                Import from Postman
+              </button>
+
               {activeWorkspace && (
                 <button
                   onClick={async () => {

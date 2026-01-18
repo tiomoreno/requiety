@@ -18,6 +18,7 @@ interface DataContextType {
   createRequest: (name: string, parentId: string) => Promise<Request>;
   updateRequest: (id: string, data: Partial<Request>) => Promise<void>;
   deleteRequest: (id: string) => Promise<void>;
+  duplicateRequest: (id: string) => Promise<Request>;
   sendRequest: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
 }
@@ -186,6 +187,20 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     }
   };
 
+  const duplicateRequest = async (id: string): Promise<Request> => {
+    try {
+      setError(null);
+      const duplicated = await requestService.duplicate(id);
+      setRequests((prev) => [...prev, duplicated]);
+      setSelectedRequest(duplicated);
+      return duplicated;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to duplicate request';
+      setError(message);
+      throw new Error(message);
+    }
+  };
+
   const sendRequest = async (id: string): Promise<void> => {
     try {
       await requestService.send(id);
@@ -213,6 +228,7 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     createRequest,
     updateRequest,
     deleteRequest,
+    duplicateRequest,
     sendRequest,
     refreshData,
   };

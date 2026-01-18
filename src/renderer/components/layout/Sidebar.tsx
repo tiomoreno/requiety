@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, RefObject } from 'react';
 import { filterTree } from '../../utils/tree-filter';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { TreeView } from './TreeView';
@@ -11,9 +11,11 @@ import { RunnerModal } from '../runner/RunnerModal';
 
 interface SidebarProps {
   onCreateWorkspace: () => void;
+  onImportCurl: () => void;
+  searchInputRef?: RefObject<HTMLInputElement>;
 }
 
-export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
+export const Sidebar = ({ onCreateWorkspace, onImportCurl, searchInputRef }: SidebarProps) => {
   const { activeWorkspace } = useWorkspaces();
   const { createFolder, createRequest, updateFolder, updateRequest, tree } = useData();
   const { openSettings } = useSettings();
@@ -115,8 +117,9 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
               </svg>
             </div>
             <input
+              ref={searchInputRef}
               type="text"
-              placeholder="Search requests..."
+              placeholder="Search requests... (Cmd+F)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -170,6 +173,27 @@ export const Sidebar = ({ onCreateWorkspace }: SidebarProps) => {
                 />
               </svg>
               Request
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onImportCurl}
+              className="flex-1 text-xs"
+            >
+              <svg
+                className="w-3 h-3 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+              Import
             </Button>
           </div>
         )}

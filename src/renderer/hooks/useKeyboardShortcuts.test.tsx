@@ -19,21 +19,47 @@ import { useWorkspaces } from './useWorkspaces';
 import { useSettings } from '../contexts/SettingsContext';
 
 describe('useKeyboardShortcuts', () => {
-  let mockData: any;
-  let mockWorkspaces: any;
-  let mockSettings: any;
+  let mockData: ReturnType<typeof useData>;
+  let mockWorkspaces: ReturnType<typeof useWorkspaces>;
+  let mockSettings: ReturnType<typeof useSettings>;
 
   beforeEach(() => {
     mockData = {
       createRequest: vi.fn(),
+      createFolder: vi.fn(),
       sendRequest: vi.fn(),
-      selectedRequest: { _id: 'r1' }
+      duplicateRequest: vi.fn(),
+      deleteRequest: vi.fn(),
+      selectedRequest: { _id: 'r1', name: 'Test Request' } as any,
+      folders: [],
+      requests: [],
+      tree: [],
+      loading: false,
+      error: null,
+      setSelectedRequest: vi.fn(),
+      updateFolder: vi.fn(),
+      deleteFolder: vi.fn(),
+      updateRequest: vi.fn(),
+      refreshData: vi.fn(),
     };
     mockWorkspaces = {
-      activeWorkspace: { _id: 'w1' }
+      activeWorkspace: { _id: 'w1', name: 'Test Workspace' } as any,
+      workspaces: [],
+      loading: false,
+      error: null,
+      setActiveWorkspace: vi.fn(),
+      createWorkspace: vi.fn(),
+      updateWorkspace: vi.fn(),
+      deleteWorkspace: vi.fn(),
+      refreshWorkspaces: vi.fn(),
     };
     mockSettings = {
-      openSettings: vi.fn()
+      openSettings: vi.fn(),
+      settings: null,
+      loading: false,
+      updateSettings: vi.fn(),
+      isSettingsOpen: false,
+      closeSettings: vi.fn(),
     };
 
     vi.mocked(useData).mockReturnValue(mockData);
@@ -54,70 +80,142 @@ describe('useKeyboardShortcuts', () => {
     return event;
   };
 
-  it('should send request on Cmd+Enter', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey('Enter', false, true); // Cmd+Enter
-    expect(mockData.sendRequest).toHaveBeenCalledWith('r1');
+  describe('send request', () => {
+    it('should send request on Cmd+Enter', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('Enter', false, true); // Cmd+Enter
+      expect(mockData.sendRequest).toHaveBeenCalledWith('r1');
+    });
+
+    it('should NOT send request on Enter without Cmd/Ctrl', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('Enter', false, false);
+      expect(mockData.sendRequest).not.toHaveBeenCalled();
+    });
+
+    it('should NOT send request if no selected request', () => {
+      mockData.selectedRequest = null;
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('Enter', false, true);
+      expect(mockData.sendRequest).not.toHaveBeenCalled();
+    });
   });
 
-  it('should NOT send request on Enter without Cmd/Ctrl', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey('Enter', false, false);
-    expect(mockData.sendRequest).not.toHaveBeenCalled();
-  });
-  
-  it('should NOT send request if no selected request', () => {
-    mockData.selectedRequest = null;
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey('Enter', false, true);
-    expect(mockData.sendRequest).not.toHaveBeenCalled();
+  describe('create request', () => {
+    it('should create new request on Cmd+N', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      const event = fireKey('n', false, true);
+      expect(event.defaultPrevented).toBe(true);
+      expect(mockData.createRequest).toHaveBeenCalledWith('New Request', 'w1');
+    });
+
+    it('should NOT create request if no active workspace', () => {
+      mockWorkspaces.activeWorkspace = null;
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('n', false, true);
+      expect(mockData.createRequest).not.toHaveBeenCalled();
+    });
   });
 
-  it('should create new request on Cmd+N', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    const event = fireKey('n', false, true); 
-    expect(event.defaultPrevented).toBe(true);
-    expect(mockData.createRequest).toHaveBeenCalledWith('New Request', 'w1');
+  describe('create folder', () => {
+    it('should create new folder on Cmd+Shift+N', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      const event = fireKey('n', false, true, true); // Cmd+Shift+N
+      expect(event.defaultPrevented).toBe(true);
+      expect(mockData.createFolder).toHaveBeenCalledWith('New Folder', 'w1');
+    });
+
+    it('should NOT create folder if no active workspace', () => {
+      mockWorkspaces.activeWorkspace = null;
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('n', false, true, true);
+      expect(mockData.createFolder).not.toHaveBeenCalled();
+    });
   });
 
-  it('should NOT create request on Cmd+Shift+N', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey('n', false, true, true);
-    expect(mockData.createRequest).not.toHaveBeenCalled();
-  });
-  
-  it('should open settings on Cmd+,', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey(',', false, true);
-    expect(mockSettings.openSettings).toHaveBeenCalled();
+  describe('duplicate request', () => {
+    it('should duplicate request on Cmd+D', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      const event = fireKey('d', false, true);
+      expect(event.defaultPrevented).toBe(true);
+      expect(mockData.duplicateRequest).toHaveBeenCalledWith('r1');
+    });
+
+    it('should NOT duplicate if no selected request', () => {
+      mockData.selectedRequest = null;
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('d', false, true);
+      expect(mockData.duplicateRequest).not.toHaveBeenCalled();
+    });
   });
 
-  it('should ignore other keys', () => {
-    renderHook(() => useKeyboardShortcuts());
-    
-    fireKey('a', false, true);
-    // Just ensure no errors and no random calls
-    expect(mockData.createRequest).not.toHaveBeenCalled();
-    expect(mockSettings.openSettings).not.toHaveBeenCalled();
+  describe('settings', () => {
+    it('should open settings on Cmd+,', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey(',', false, true);
+      expect(mockSettings.openSettings).toHaveBeenCalled();
+    });
   });
 
-  it('should clean up listener on unmount', () => {
-    const { unmount } = renderHook(() => useKeyboardShortcuts());
-    
-    const removeSpy = vi.spyOn(window, 'removeEventListener');
-    unmount();
-    // While we can spy on removeEventListener, simpler to ensure events stop triggering
-    
-    // But testing implementation detail (call) is easier here as we can't easily check "unlisten" effect without firing and asserting nothing happened.
-    // Let's fire event again
-    mockData.sendRequest.mockClear();
-    fireKey('Enter', false, true);
-    expect(mockData.sendRequest).not.toHaveBeenCalled();
+  describe('toggle sidebar', () => {
+    it('should call onToggleSidebar on Cmd+\\', () => {
+      const onToggleSidebar = vi.fn();
+      renderHook(() => useKeyboardShortcuts({ onToggleSidebar }));
+
+      fireKey('\\', false, true);
+      expect(onToggleSidebar).toHaveBeenCalled();
+    });
+
+    it('should call onToggleSidebar on Cmd+B', () => {
+      const onToggleSidebar = vi.fn();
+      renderHook(() => useKeyboardShortcuts({ onToggleSidebar }));
+
+      fireKey('b', false, true);
+      expect(onToggleSidebar).toHaveBeenCalled();
+    });
+  });
+
+  describe('focus search', () => {
+    it('should call onFocusSearch on Cmd+F', () => {
+      const onFocusSearch = vi.fn();
+      renderHook(() => useKeyboardShortcuts({ onFocusSearch }));
+
+      fireKey('f', false, true);
+      expect(onFocusSearch).toHaveBeenCalled();
+    });
+  });
+
+  describe('other keys', () => {
+    it('should ignore unhandled keys', () => {
+      renderHook(() => useKeyboardShortcuts());
+
+      fireKey('a', false, true);
+      // Just ensure no errors and no random calls
+      expect(mockData.createRequest).not.toHaveBeenCalled();
+      expect(mockSettings.openSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanup', () => {
+    it('should clean up listener on unmount', () => {
+      const { unmount } = renderHook(() => useKeyboardShortcuts());
+
+      unmount();
+
+      // Fire event after unmount
+      mockData.sendRequest = vi.fn();
+      fireKey('Enter', false, true);
+      expect(mockData.sendRequest).not.toHaveBeenCalled();
+    });
   });
 });
