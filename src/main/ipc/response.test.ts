@@ -17,7 +17,7 @@ vi.mock('../utils/file-manager', () => ({
 }));
 
 describe('Response IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
   beforeEach(() => {
     vi.clearAllMocks();

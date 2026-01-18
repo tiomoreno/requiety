@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
 vi.mock('../services/runner.service');
 
 describe('Runner IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
   const mockEvent = { sender: {} };
 
   beforeEach(() => {

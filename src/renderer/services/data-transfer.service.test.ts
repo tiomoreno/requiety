@@ -13,6 +13,7 @@ describe('DataTransferService', () => {
                 }
             }
         } as any;
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 

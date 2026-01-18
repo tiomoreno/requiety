@@ -23,7 +23,7 @@ vi.mock('../utils/template-engine');
 vi.mock('../services/assertion.service');
 
 describe('Request IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
   beforeEach(() => {
     vi.clearAllMocks();

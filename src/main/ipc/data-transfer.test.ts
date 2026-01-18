@@ -18,7 +18,7 @@ vi.mock('../services/export.service');
 vi.mock('../services/import.service');
 
 describe('Data Transfer IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
   const mockEvent = { sender: {} };
 
   beforeEach(() => {

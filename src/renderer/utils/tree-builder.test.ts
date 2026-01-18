@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildTree, findItemInTree, getParentIds } from './tree-builder';
+import { buildTree, findItemInTree, getParentIds, flattenTree } from './tree-builder';
 import { Folder, Request, WorkspaceTreeItem } from '../../shared/types';
 
 describe('tree-builder', () => {
     // Helpers
-    const createFolder = (id: string, name: string, parentId: string, sortOrder: number = 0): Folder => ({
+    const createFolder = (id: string, name: string, parentId: string, sortOrder = 0): Folder => ({
         _id: id,
         type: 'Folder',
         name,
@@ -14,7 +14,7 @@ describe('tree-builder', () => {
         modified: 0
     });
 
-    const createRequest = (id: string, name: string, parentId: string, sortOrder: number = 0): Request => ({
+    const createRequest = (id: string, name: string, parentId: string, sortOrder = 0): Request => ({
         _id: id,
         type: 'Request',
         name,
@@ -136,5 +136,76 @@ describe('tree-builder', () => {
           const parents = getParentIds(tree, 'missing');
           expect(parents).toEqual([]);
       });
+  });
+
+  describe('flattenTree', () => {
+    it('should flatten tree with all folders expanded', () => {
+      const tree: WorkspaceTreeItem[] = [{
+        id: 'root',
+        type: 'folder',
+        name: 'root',
+        children: [{
+          id: 'child',
+          type: 'request',
+          name: 'child'
+        }]
+      }];
+
+      const expandedIds = new Set(['root']);
+      const flat = flattenTree(tree, expandedIds);
+
+      expect(flat.length).toBe(2);
+      expect(flat[0].item.id).toBe('root');
+      expect(flat[0].depth).toBe(0);
+      expect(flat[0].isExpanded).toBe(true);
+      expect(flat[1].item.id).toBe('child');
+      expect(flat[1].depth).toBe(1);
+    });
+
+    it('should not include children of collapsed folders', () => {
+      const tree: WorkspaceTreeItem[] = [{
+        id: 'root',
+        type: 'folder',
+        name: 'root',
+        children: [{
+          id: 'child',
+          type: 'request',
+          name: 'child'
+        }]
+      }];
+
+      const expandedIds = new Set<string>(); // Nothing expanded
+      const flat = flattenTree(tree, expandedIds);
+
+      expect(flat.length).toBe(1);
+      expect(flat[0].item.id).toBe('root');
+      expect(flat[0].isExpanded).toBe(false);
+    });
+
+    it('should handle nested folders', () => {
+      const tree: WorkspaceTreeItem[] = [{
+        id: 'f1',
+        type: 'folder',
+        name: 'f1',
+        children: [{
+          id: 'f2',
+          type: 'folder',
+          name: 'f2',
+          children: [{
+            id: 'r1',
+            type: 'request',
+            name: 'r1'
+          }]
+        }]
+      }];
+
+      const expandedIds = new Set(['f1', 'f2']);
+      const flat = flattenTree(tree, expandedIds);
+
+      expect(flat.length).toBe(3);
+      expect(flat[0].depth).toBe(0);
+      expect(flat[1].depth).toBe(1);
+      expect(flat[2].depth).toBe(2);
+    });
   });
 });

@@ -6,6 +6,7 @@ import type {
   Environment,
   Variable,
   Settings,
+  OAuth2Token,
 } from '../../shared/types';
 import { getDatabase, dbOperation } from './index';
 import { generateId, getCurrentTimestamp } from '../utils/id-generator';
@@ -608,4 +609,36 @@ const createDefaultSettings = async (): Promise<Settings> => {
   
   const db = getDatabase('Settings');
   return await dbOperation<Settings>((cb) => db.insert(settings, cb));
+};
+
+// ============================================================================
+// OAuth2Token Operations
+// ============================================================================
+
+export const saveToken = async (
+  data: Omit<OAuth2Token, '_id' | 'type' | 'created' | 'modified'>
+): Promise<OAuth2Token> => {
+  const db = getDatabase('OAuth2Token');
+  // Remove existing token for the request before saving new one
+  await dbOperation(cb => db.remove({ requestId: data.requestId }, {}, cb));
+
+  const token: OAuth2Token = {
+    _id: generateId('OAuth2Token'),
+    type: 'OAuth2Token',
+    ...data,
+    created: getCurrentTimestamp(),
+    modified: getCurrentTimestamp(),
+  };
+  
+  return await dbOperation<OAuth2Token>((cb) => db.insert(token, cb));
+};
+
+export const getTokenByRequestId = async (requestId: string): Promise<OAuth2Token | null> => {
+  const db = getDatabase('OAuth2Token');
+  return await dbOperation<OAuth2Token>((cb) => db.findOne({ requestId }, cb));
+};
+
+export const deleteTokenByRequestId = async (requestId: string): Promise<void> => {
+  const db = getDatabase('OAuth2Token');
+  await dbOperation((cb) => db.remove({ requestId }, {}, cb));
 };

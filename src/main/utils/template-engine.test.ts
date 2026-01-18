@@ -51,6 +51,7 @@ describe('TemplateEngine', () => {
     });
 
     it('should catch error and return original template', () => {
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const res = TemplateEngine.render('THROW_ERROR', {});
         expect(res).toBe('THROW_ERROR');
@@ -131,11 +132,48 @@ describe('TemplateEngine', () => {
         const reqBearer = { authentication: { type: 'bearer', token: '{{token}}' } };
         const resBearer = TemplateEngine.renderRequest(reqBearer, variables);
         expect(resBearer.authentication.token).toBe('secret-token');
-        
+
         const reqBasic = { authentication: { type: 'basic', username: '{{userId}}', password: '{{token}}' } };
         const resBasic = TemplateEngine.renderRequest(reqBasic, variables);
         expect(resBasic.authentication.username).toBe('123');
         expect(resBasic.authentication.password).toBe('secret-token');
+    });
+
+    it('should render form-urlencoded params', () => {
+        const request: any = {
+            url: 'http://foo.com',
+            headers: [],
+            body: {
+                type: 'form-urlencoded',
+                params: [
+                    { name: 'user_id', value: '{{userId}}', enabled: true },
+                    { name: 'api_key', value: '{{token}}', enabled: true }
+                ]
+            }
+        };
+
+        const rendered = TemplateEngine.renderRequest(request, variables);
+        expect(rendered.body.params[0].value).toBe('123');
+        expect(rendered.body.params[1].value).toBe('secret-token');
+    });
+
+    it('should render form-data params', () => {
+        const request: any = {
+            url: 'http://foo.com',
+            headers: [],
+            body: {
+                type: 'form-data',
+                params: [
+                    { name: '{{baseUrl}}', value: '{{userId}}', enabled: true },
+                    { name: 'secret', value: '{{token}}', enabled: false }
+                ]
+            }
+        };
+
+        const rendered = TemplateEngine.renderRequest(request, variables);
+        expect(rendered.body.params[0].name).toBe('https://api.example.com');
+        expect(rendered.body.params[0].value).toBe('123');
+        expect(rendered.body.params[1].value).toBe('secret-token');
     });
   });
 });

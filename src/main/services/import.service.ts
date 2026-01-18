@@ -85,7 +85,7 @@ export const importService = {
        const newId = idMap.get(folder._id);
        if (!newId) continue;
        
-       let parentId = folder.parentId;
+       const parentId = folder.parentId;
        
        // If parent was another folder
        if (idMap.has(parentId)) {

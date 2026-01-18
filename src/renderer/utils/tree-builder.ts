@@ -139,3 +139,46 @@ export const getParentIds = (
   findParents(tree, itemId);
   return parents;
 };
+
+/**
+ * Flat tree item for virtualization
+ */
+export interface FlatTreeItem {
+  item: WorkspaceTreeItem;
+  depth: number;
+  hasChildren: boolean;
+  isExpanded: boolean;
+}
+
+/**
+ * Flatten a tree into a list for virtualization, respecting expanded state.
+ * Only includes items that should be visible based on expanded folders.
+ */
+export const flattenTree = (
+  tree: WorkspaceTreeItem[],
+  expandedIds: Set<string>,
+  depth = 0
+): FlatTreeItem[] => {
+  const result: FlatTreeItem[] = [];
+
+  tree.forEach((item) => {
+    const isFolder = item.type === 'folder';
+    const hasChildren = isFolder && item.children && item.children.length > 0;
+    const isExpanded = expandedIds.has(item.id);
+
+    result.push({
+      item,
+      depth,
+      hasChildren: !!hasChildren,
+      isExpanded,
+    });
+
+    // If folder is expanded, include its children
+    if (isFolder && hasChildren && isExpanded) {
+      const childItems = flattenTree(item.children!, expandedIds, depth + 1);
+      result.push(...childItems);
+    }
+  });
+
+  return result;
+};

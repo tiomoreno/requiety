@@ -1,11 +1,30 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse, type Method } from 'axios';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import FormData from 'form-data';
 import type { Request, Response } from '../../shared/types';
 
 /**
  * Service to handle HTTP requests
  */
+export interface HttpServiceOptions {
+  timeout?: number;
+  validateSSL?: boolean;
+  followRedirects?: boolean;
+  maxRedirects?: number;
+}
+
+const DEFAULT_TIMEOUT = 30000;
+
 export class HttpService {
+  private options: HttpServiceOptions;
+
+  constructor(options: HttpServiceOptions = {}) {
+    this.options = options;
+  }
+
   /**
    * Send a request
    */
@@ -27,9 +46,17 @@ export class HttpService {
         method: request.method as Method,
         headers,
         data,
-        timeout: 30000, // TODO: Make configurable from settings
+        timeout: this.options.timeout ?? DEFAULT_TIMEOUT,
         validateStatus: () => true, // Don't throw on error status codes
         transformResponse: [(data) => data], // Don't parse JSON automatically yet, we want raw body
+        // SSL validation
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: this.options.validateSSL ?? true,
+        }),
+        // Redirect handling
+        maxRedirects: this.options.followRedirects !== false
+          ? (this.options.maxRedirects ?? 5)
+          : 0,
       };
 
       // Add auth
@@ -140,22 +167,29 @@ export class HttpService {
         const enabledParams =
           request.body.params?.filter((param) => param.enabled && param.name) ?? [];
 
-        if (typeof FormData !== 'undefined') {
-          const formData = new FormData();
-          enabledParams.forEach((param) => {
-            formData.append(param.name, param.value ?? '');
-          });
-          return { data: formData };
-        }
-
-        const searchParams = new URLSearchParams();
+        // Use Node.js FormData for proper multipart support
+        const formData = new FormData();
         enabledParams.forEach((param) => {
-          searchParams.append(param.name, param.value ?? '');
+          if (param.type === 'file' && param.filePath) {
+            // File upload - use fs.createReadStream
+            try {
+              const fileName = path.basename(param.filePath);
+              formData.append(param.name, fs.createReadStream(param.filePath), {
+                filename: fileName,
+              });
+            } catch (error) {
+              console.warn(`Failed to read file: ${param.filePath}`, error);
+            }
+          } else {
+            // Regular text field
+            formData.append(param.name, param.value ?? '');
+          }
         });
 
         return {
-          data: searchParams.toString(),
-          contentType: 'application/x-www-form-urlencoded',
+          data: formData,
+          // Let FormData set the content-type with proper boundary
+          contentType: undefined,
         };
       }
       case 'graphql': {
@@ -200,5 +234,17 @@ export class HttpService {
         password: request.authentication.password || '',
       };
     }
+
+    // OAuth2 - token should be set via the oauth2Token option
+    // This is handled by the request execution service which fetches
+    // the token before calling sendRequest
+  }
+
+  /**
+   * Set OAuth2 token on request headers
+   */
+  setOAuth2Token(config: AxiosRequestConfig, token: string, tokenType = 'Bearer'): void {
+    if (!config.headers) config.headers = {};
+    config.headers['Authorization'] = `${tokenType} ${token}`;
   }
 }

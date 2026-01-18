@@ -8,6 +8,7 @@ import React from 'react';
 describe('useData', () => {
   it('should throw if used outside provider', () => {
     // Suppress console.error for the expected error
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     expect(() => renderHook(() => useData())).toThrow('useData must be used within DataProvider');

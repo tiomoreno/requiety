@@ -4,7 +4,7 @@ export const responseService = {
   /**
    * Get response history for a request
    */
-  async getHistory(requestId: string, limit: number = 20): Promise<Response[]> {
+  async getHistory(requestId: string, limit = 20): Promise<Response[]> {
     const result = await window.api.response.getHistory(requestId, limit) as unknown as ApiResponse<Response[]>;
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to get response history');

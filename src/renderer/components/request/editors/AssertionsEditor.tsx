@@ -1,36 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Assertion, AssertionSource, AssertionOperator } from '../../../../shared/types';
+import type { Assertion, AssertionSource, AssertionOperator } from '../../../shared/types';
+import { Button } from '../../common/Button';
+import { Input } from '../../common/Input';
+import { FaTrash } from 'react-icons/fa';
 import './AssertionsEditor.css';
-import { FaTrash, FaPlus, FaPlay } from 'react-icons/fa';
 
 interface AssertionsEditorProps {
   assertions: Assertion[];
   onChange: (assertions: Assertion[]) => void;
 }
 
-const SOURCES: { [key in AssertionSource]: string } = {
-  status: 'Status Code',
-  header: 'Header',
-  jsonBody: 'JSON Body',
-  responseTime: 'Response Time (ms)'
-};
+const assertionSources: AssertionSource[] = ['status', 'header', 'jsonBody', 'responseTime'];
+const assertionOperators: AssertionOperator[] = [
+  'equals', 'notEquals', 'contains', 'notContains', 'greaterThan', 'lessThan',
+  'exists', 'notExists', 'isNull', 'isNotNull'
+];
 
-const OPERATORS: { [key in AssertionOperator]: string } = {
-  equals: 'Equals',
-  notEquals: 'Not Equals',
-  contains: 'Contains',
-  notContains: 'Not Contains',
-  greaterThan: 'Greater Than',
-  lessThan: 'Less Than',
-  exists: 'Exists',
-  notExists: 'Not Exists',
-  isNull: 'Is Null',
-  isNotNull: 'Is Not Null',
-};
-
-export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions = [], onChange }) => {
-  const addAssertion = () => {
+export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, onChange }) => {
+  const handleAddAssertion = () => {
     const newAssertion: Assertion = {
       id: uuidv4(),
       source: 'status',
@@ -41,96 +29,67 @@ export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions =
     onChange([...assertions, newAssertion]);
   };
 
-  const removeAssertion = (id: string) => {
-    onChange(assertions.filter((a) => a.id !== id));
+  const handleUpdateAssertion = (id: string, updatedAssertion: Partial<Assertion>) => {
+    const updatedAssertions = assertions.map(a =>
+      a.id === id ? { ...a, ...updatedAssertion } : a
+    );
+    onChange(updatedAssertions);
   };
 
-  const updateAssertion = (id: string, updates: Partial<Assertion>) => {
-    onChange(
-      assertions.map((a) => (a.id === id ? { ...a, ...updates } : a))
-    );
+  const handleDeleteAssertion = (id: string) => {
+    const updatedAssertions = assertions.filter(a => a.id !== id);
+    onChange(updatedAssertions);
   };
 
   return (
     <div className="assertions-editor">
-      <div className="assertions-header">
-        <h3>Assertions</h3>
-        <button className="add-assertion-btn" onClick={addAssertion}>
-          <FaPlus /> Add Assertion
-        </button>
+      <div className="editor-header">
+        <span>Assertions</span>
+        <Button onClick={handleAddAssertion} variant="primary">
+          Add Assertion
+        </Button>
       </div>
-
       <div className="assertions-list">
-        {assertions.length === 0 ? (
-          <div className="empty-state">
-            <FaPlay className="empty-icon" />
-            <p>Add assertions to automatically test your request</p>
-          </div>
-        ) : (
-          assertions.map((assertion) => (
-            <div key={assertion.id} className="assertion-item">
-              <input
-                type="checkbox"
-                checked={assertion.enabled}
-                onChange={(e) => updateAssertion(assertion.id, { enabled: e.target.checked })}
+        {assertions.map((assertion) => (
+          <div key={assertion.id} className="assertion-row">
+            <Input
+              type="checkbox"
+              checked={assertion.enabled}
+              onChange={(e) => handleUpdateAssertion(assertion.id, { enabled: e.target.checked })}
+            />
+            <select
+              value={assertion.source}
+              onChange={(e) => handleUpdateAssertion(assertion.id, { source: e.target.value as AssertionSource })}
+            >
+              {assertionSources.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {['header', 'jsonBody'].includes(assertion.source) && (
+              <Input
+                placeholder="Property (e.g. Content-Type or $.data.id)"
+                value={assertion.property || ''}
+                onChange={(e) => handleUpdateAssertion(assertion.id, { property: e.target.value })}
               />
-              
-              <div className="assertion-source">
-                <select
-                  value={assertion.source}
-                  onChange={(e) => updateAssertion(assertion.id, { source: e.target.value as AssertionSource, property: '' })}
-                >
-                  {Object.entries(SOURCES).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {(assertion.source === 'header' || assertion.source === 'jsonBody') && (
-                <div className="assertion-property">
-                  <input
-                    type="text"
-                    placeholder={assertion.source === 'header' ? 'Header Name' : 'JSON Path (e.g. $.data.id)'}
-                    value={assertion.property || ''}
-                    onChange={(e) => updateAssertion(assertion.id, { property: e.target.value })}
-                  />
-                </div>
-              )}
-
-              <div className="assertion-operator">
-                <select
-                  value={assertion.operator}
-                  onChange={(e) => updateAssertion(assertion.id, { operator: e.target.value as AssertionOperator })}
-                >
-                  {Object.entries(OPERATORS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {assertion.operator !== 'exists' && 
-               assertion.operator !== 'notExists' &&
-               assertion.operator !== 'isNull' && 
-               assertion.operator !== 'isNotNull' && (
-                <div className="assertion-value">
-                  <input
-                    type="text"
-                    placeholder="Expected Value"
-                    value={assertion.value || ''}
-                    onChange={(e) => updateAssertion(assertion.id, { value: e.target.value })}
-                  />
-                </div>
-              )}
-
-              <button 
-                className="delete-btn"
-                onClick={() => removeAssertion(assertion.id)}
-                title="Remove Assertion"
-              >
-                <FaTrash />
-              </button>
-            </div>
-          ))
+            )}
+            <select
+              value={assertion.operator}
+              onChange={(e) => handleUpdateAssertion(assertion.id, { operator: e.target.value as AssertionOperator })}
+            >
+              {assertionOperators.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <Input
+              placeholder="Expected Value"
+              value={assertion.value || ''}
+              onChange={(e) => handleUpdateAssertion(assertion.id, { value: e.target.value })}
+            />
+            <Button onClick={() => handleDeleteAssertion(assertion.id)} variant="danger" size="sm">
+              <FaTrash />
+            </Button>
+          </div>
+        ))}
+        {assertions.length === 0 && (
+          <div className="empty-state">
+            No assertions defined. Add one to get started.
+          </div>
         )}
       </div>
     </div>

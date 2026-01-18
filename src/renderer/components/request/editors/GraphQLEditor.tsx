@@ -46,7 +46,7 @@ export function GraphQLEditor({ query, variables, url, headers, onChange }: Grap
         }
       });
 
-      const result = await (window as any).api.graphql.introspect(url, headerObj);
+      const result = await window.api.graphql.introspect(url, headerObj);
       
       if (result.success && result.data) {
         // buildClientSchema expects the 'data' property of the introspection result

@@ -10,6 +10,9 @@ import type {
   Settings,
   SendRequestResult,
   ApiResponse,
+  Assertion,
+  OAuth2Config,
+  OAuth2Token,
 } from './shared/types';
 
 // Expose protected methods that allow the renderer process to use
@@ -59,6 +62,12 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke(IPC_CHANNELS.REQUEST_GET_BY_WORKSPACE, workspaceId),
     getById: (id: string): Promise<ApiResponse<Request | null>> =>
       ipcRenderer.invoke(IPC_CHANNELS.REQUEST_GET_BY_ID, id),
+  },
+
+  // Assertion operations
+  assertions: {
+    update: (requestId: string, assertions: Assertion[]): Promise<ApiResponse<Request>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.ASSERTIONS_UPDATE, requestId, assertions),
   },
 
   // Response operations
@@ -132,6 +141,38 @@ contextBridge.exposeInMainWorld('api', {
   graphql: {
     introspect: (url: string, headers: any): Promise<{ success: boolean; data?: any; error?: string }> =>
       ipcRenderer.invoke(IPC_CHANNELS.GRAPHQL_INTROSPECT, { url, headers }),
+  },
+
+  // gRPC
+  grpc: {
+    selectProtoFile: (): Promise<ApiResponse<string | null>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.GRPC_SELECT_PROTO_FILE),
+    parseProto: (filePath: string): Promise<ApiResponse<any>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.GRPC_PARSE_PROTO, filePath),
+  },
+
+  // Sync
+  sync: {
+    setDirectory: (): Promise<ApiResponse<string | null>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SYNC_SET_DIRECTORY),
+    exportWorkspace: (workspaceId: string, directory: string): Promise<ApiResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SYNC_EXPORT, workspaceId, directory),
+  },
+
+  // OAuth 2.0
+  oauth: {
+    startAuthCodeFlow: (config: OAuth2Config, requestId: string): Promise<ApiResponse<OAuth2Token>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_START_AUTH_FLOW, config, requestId),
+    clientCredentials: (config: OAuth2Config, requestId: string): Promise<ApiResponse<OAuth2Token>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_CLIENT_CREDENTIALS, config, requestId),
+    passwordGrant: (config: OAuth2Config, requestId: string): Promise<ApiResponse<OAuth2Token>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_PASSWORD_GRANT, config, requestId),
+    refreshToken: (config: OAuth2Config, refreshToken: string, requestId: string): Promise<ApiResponse<OAuth2Token>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_REFRESH_TOKEN, config, refreshToken, requestId),
+    getToken: (requestId: string): Promise<ApiResponse<OAuth2Token | null>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_GET_TOKEN, requestId),
+    clearToken: (requestId: string): Promise<ApiResponse<void>> =>
+      ipcRenderer.invoke(IPC_CHANNELS.OAUTH_CLEAR_TOKEN, requestId),
   },
 
   // WebSocket

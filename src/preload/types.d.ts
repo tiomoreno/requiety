@@ -39,6 +39,29 @@ export interface ElectronAPI {
     getById: (id: string) => Promise<ApiResponse<Request | null>>;
   };
 
+  graphql: {
+    introspect: (url: string, headers: Record<string, string>) => Promise<ApiResponse<any>>;
+  };
+
+  grpc: {
+    selectProtoFile: () => Promise<ApiResponse<string | null>>;
+    parseProto: (filePath: string) => Promise<ApiResponse<any>>;
+  };
+
+  sync: {
+    setDirectory: () => Promise<ApiResponse<string | null>>;
+    exportWorkspace: (workspaceId: string, directory: string) => Promise<ApiResponse<void>>;
+  };
+
+  oauth: {
+    startAuthCodeFlow: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    clientCredentials: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    passwordGrant: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    refreshToken: (config: OAuth2Config, refreshToken: string, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    getToken: (requestId: string) => Promise<ApiResponse<OAuth2Token | null>>;
+    clearToken: (requestId: string) => Promise<ApiResponse<void>>;
+  };
+
   response: {
     getHistory: (requestId: string, limit?: number) => Promise<Response[]>;
     getById: (id: string) => Promise<Response>;

@@ -7,13 +7,17 @@ import { initializeDirectories } from './main/utils/file-manager';
 import { registerWorkspaceHandlers } from './main/ipc/workspace';
 import { registerFolderHandlers } from './main/ipc/folder';
 import { registerRequestHandlers } from './main/ipc/request';
+import { registerAssertionHandlers } from './main/ipc/assertion';
 import { registerEnvironmentHandlers } from './main/ipc/environment';
 import { registerVariableHandlers } from './main/ipc/variable';
 import { registerSettingsHandlers } from './main/ipc/settings';
 import { registerResponseHandlers } from './main/ipc/response';
 import { registerDataTransferHandlers } from './main/ipc/data-transfer';
 import { registerRunnerHandlers } from './main/ipc/runner';
+import { registerGrpcHandlers } from './main/ipc/grpc';
+import { registerSyncHandlers } from './main/ipc/sync';
 import { registerWebSocketHandlers } from './main/ipc/websocket';
+import { registerOAuthHandlers } from './main/ipc/oauth';
 import { WebSocketService } from './main/services/websocket.service';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -72,13 +76,17 @@ const initializeApp = async () => {
     registerWorkspaceHandlers();
     registerFolderHandlers();
     registerRequestHandlers();
+    registerAssertionHandlers();
     registerEnvironmentHandlers();
     registerVariableHandlers();
     registerSettingsHandlers();
     registerDataTransferHandlers();
     registerResponseHandlers();
     registerRunnerHandlers();
+    registerGrpcHandlers();
+    registerSyncHandlers();
     registerWebSocketHandlers();
+    registerOAuthHandlers();
     console.log('IPC handlers registered');
     
     console.log('Application initialized successfully');

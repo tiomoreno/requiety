@@ -13,7 +13,15 @@ vi.mock('electron', () => ({
 
 vi.mock('./request.execution.service');
 vi.mock('../database', () => ({
-  getDatabase: vi.fn()
+  getDatabase: vi.fn(),
+  dbOperation: vi.fn((callback: (cb: (err: Error | null, result: any) => void) => void) => {
+    return new Promise((resolve, reject) => {
+      callback((err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+  })
 }));
 
 describe('RunnerService', () => {

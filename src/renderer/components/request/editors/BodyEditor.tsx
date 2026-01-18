@@ -1,17 +1,24 @@
-import { RequestBody, BodyType, RequestHeader } from '../../../../shared/types';
+import { RequestBody, BodyType, RequestHeader, RequestBodyParam, RequestGrpc } from '../../../../shared/types';
 import { CodeEditor } from '../../common/CodeEditor';
 import { GraphQLEditor } from './GraphQLEditor';
+import { FormParamsEditor } from './FormParamsEditor';
+import { GrpcEditor } from './GrpcEditor';
 
 interface BodyEditorProps {
   body: RequestBody;
-  onChange: (body: RequestBody) => void;
+  grpcData?: RequestGrpc;
+  onChange: (body: RequestBody, grpcData?: RequestGrpc) => void;
   url: string;
   headers: RequestHeader[];
 }
 
-export function BodyEditor({ body, onChange, url, headers }: BodyEditorProps) {
+export function BodyEditor({ body, grpcData, onChange, url, headers }: BodyEditorProps) {
   const handleTypeChange = (type: BodyType) => {
-    onChange({ ...body, type });
+    if ((type === 'form-urlencoded' || type === 'form-data') && !body.params) {
+      onChange({ ...body, type, params: [] });
+    } else {
+      onChange({ ...body, type });
+    }
   };
 
   const handleContentChange = (text: string) => {
@@ -23,6 +30,14 @@ export function BodyEditor({ body, onChange, url, headers }: BodyEditorProps) {
        ...body,
        graphql: { query, variables }
      });
+  };
+
+  const handleParamsChange = (params: RequestBodyParam[]) => {
+    onChange({ ...body, params });
+  };
+
+  const handleGrpcChange = (newGrpcData: RequestGrpc, bodyText: string) => {
+    onChange({ ...body, text: bodyText }, newGrpcData);
   };
   
   return (
@@ -40,8 +55,9 @@ export function BodyEditor({ body, onChange, url, headers }: BodyEditorProps) {
              <option value="json">JSON</option>
              <option value="raw">Text (Raw)</option>
              <option value="graphql">GraphQL</option>
-             {/* <option value="form-urlencoded">Form URL Encoded</option> */}
-             {/* <option value="form-data">Multipart Form</option> */}
+             <option value="grpc">gRPC</option>
+             <option value="form-urlencoded">Form URL Encoded</option>
+             <option value="form-data">Multipart Form</option>
            </select>
         </div>
         
@@ -67,8 +83,32 @@ export function BodyEditor({ body, onChange, url, headers }: BodyEditorProps) {
              variables={body.graphql?.variables || ''}
              url={url}
              headers={headers}
-             onChange={handleGraphQLChange} 
+             onChange={handleGraphQLChange}
            />
+        </div>
+      ) : body.type === 'form-urlencoded' ? (
+        <div className="flex-1 overflow-hidden border-t border-gray-200 dark:border-gray-800">
+          <FormParamsEditor
+            params={body.params || []}
+            onChange={handleParamsChange}
+            allowFiles={false}
+          />
+        </div>
+      ) : body.type === 'form-data' ? (
+        <div className="flex-1 overflow-hidden border-t border-gray-200 dark:border-gray-800">
+          <FormParamsEditor
+            params={body.params || []}
+            onChange={handleParamsChange}
+            allowFiles={true}
+          />
+        </div>
+      ) : body.type === 'grpc' ? (
+        <div className="flex-1 overflow-hidden border-t border-gray-200 dark:border-gray-800">
+          <GrpcEditor
+            grpcData={grpcData || {}}
+            bodyText={body.text || ''}
+            onChange={handleGrpcChange}
+          />
         </div>
       ) : (
         <div className="flex-1 relative">

@@ -1,13 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Request } from '../../../shared/types';
 import { HeadersEditor } from './editors/HeadersEditor';
 import { BodyEditor } from './editors/BodyEditor';
 import { AuthEditor } from './editors/AuthEditor';
 import { AssertionsEditor } from './editors/AssertionsEditor';
 import { ScriptEditor } from './editors/ScriptEditor';
+import { requestService } from '../../services/request.service';
 
 import { WebSocketEditor } from './editors/WebSocketEditor';
 import { mergeAutoHeaders } from '../../utils/header-utils';
+
+// Simple debounce implementation
+const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
+  const debounced = (...args: Parameters<F>) => {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
+    timeout = setTimeout(() => func(...args), waitFor);
+  };
+
+  return debounced as (...args: Parameters<F>) => void;
+};
+
 
 interface RequestTabsProps {
   request: Request;
@@ -20,8 +37,18 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('params');
   const [activeScriptType, setActiveScriptType] = useState<'pre' | 'post'>('pre');
 
-  const handleUpdate = (field: keyof Request, value: any) => {
-    onRequestUpdate({ ...request, [field]: value });
+  // Debounced save function
+  const debouncedUpdateRequest = useCallback(
+    debounce((requestId: string, data: Partial<Request>) => {
+      requestService.update(requestId, data);
+    }, 500),
+    []
+  );
+
+  const handleUpdate = (update: Partial<Request>) => {
+    const updatedRequest = { ...request, ...update };
+    onRequestUpdate(updatedRequest); // Update parent state immediately for UI responsiveness
+    debouncedUpdateRequest(request._id, update); // Persist changes with debounce
   };
 
   // Merge auto-headers when request changes or loads
@@ -31,7 +58,7 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
     // Simple length check + check if auto headers are present
     const hasAutoHeaders = request.headers?.some(h => h.isAuto);
     if (!hasAutoHeaders || request.headers?.length !== merged.length) {
-       handleUpdate('headers', merged);
+       handleUpdate({ headers: merged });
     }
   }, [request._id]); // Re-run when switching requests, but be careful about infinite loops if we depend on request.headers
 
@@ -41,7 +68,7 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
       <WebSocketEditor
         requestId={request._id}
         url={request.url}
-        onUrlChange={(url) => handleUpdate('url', url)}
+        onUrlChange={(url) => handleUpdate({ url })}
       />
     );
   }
@@ -87,14 +114,21 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
         {activeTab === 'headers' && (
           <HeadersEditor
             headers={request.headers || []}
-            onChange={(headers) => handleUpdate('headers', headers)}
+            onChange={(headers) => handleUpdate({ headers })}
           />
         )}
 
         {activeTab === 'body' && (
           <BodyEditor
             body={request.body || { type: 'none' }}
-            onChange={(body) => handleUpdate('body', body)}
+            grpcData={request.grpc}
+            onChange={(body, grpcData) => {
+              const update: Partial<Request> = { body };
+              if (grpcData) {
+                update.grpc = grpcData;
+              }
+              handleUpdate(update);
+            }}
             url={request.url}
             headers={request.headers || []}
           />
@@ -103,7 +137,7 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
         {activeTab === 'auth' && (
           <AuthEditor
             auth={request.authentication || { type: 'none' }}
-            onChange={(auth) => handleUpdate('authentication', auth)}
+            onChange={(auth) => handleUpdate({ authentication: auth })}
           />
         )}
 
@@ -134,7 +168,7 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
              <div className="flex-1 p-0">
                <ScriptEditor 
                  value={activeScriptType === 'pre' ? request.preRequestScript || '' : request.postRequestScript || ''} 
-                 onChange={(val) => handleUpdate(activeScriptType === 'pre' ? 'preRequestScript' : 'postRequestScript', val)} 
+                 onChange={(val) => handleUpdate(activeScriptType === 'pre' ? { preRequestScript: val } : { postRequestScript: val })} 
                />
              </div>
            </div>
@@ -143,7 +177,7 @@ export function RequestTabs({ request, onRequestUpdate }: RequestTabsProps) {
         {activeTab === 'tests' && (
           <AssertionsEditor
             assertions={request.assertions || []}
-            onChange={(assertions) => handleUpdate('assertions', assertions)}
+            onChange={(assertions) => handleUpdate({ assertions })}
           />
         )}
       </div>

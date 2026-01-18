@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vitest run:*)",
+      "Bash(find:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm test:*)",
+      "Bash(grep:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

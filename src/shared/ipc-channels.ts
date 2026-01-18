@@ -24,6 +24,9 @@ export const IPC_CHANNELS = {
   REQUEST_GET_BY_WORKSPACE: 'request:getByWorkspace',
   REQUEST_GET_BY_ID: 'request:getById',
 
+  // Assertions
+  ASSERTIONS_UPDATE: 'assertions:update',
+
   // Response
   RESPONSE_GET_HISTORY: 'response:getHistory',
   RESPONSE_GET_BY_ID: 'response:getById',
@@ -70,11 +73,29 @@ export const IPC_CHANNELS = {
   // GraphQL
   GRAPHQL_INTROSPECT: 'graphql:introspect',
   
+  // gRPC
+  GRPC_SELECT_PROTO_FILE: 'grpc:selectProtoFile',
+  GRPC_PARSE_PROTO: 'grpc:parseProto',
+
+  // Sync
+  SYNC_SET_DIRECTORY: 'sync:setDirectory',
+  SYNC_EXPORT: 'sync:export',
+  SYNC_IMPORT: 'sync:import',
+
   // WebSocket
   WS_CONNECT: 'ws:connect',
   WS_DISCONNECT: 'ws:disconnect',
   WS_SEND: 'ws:send',
   WS_EVENT: 'ws:event',
+
+  // OAuth 2.0
+  OAUTH_START_AUTH_FLOW: 'oauth:startAuthFlow',
+  OAUTH_EXCHANGE_CODE: 'oauth:exchangeCode',
+  OAUTH_REFRESH_TOKEN: 'oauth:refreshToken',
+  OAUTH_GET_TOKEN: 'oauth:getToken',
+  OAUTH_CLEAR_TOKEN: 'oauth:clearToken',
+  OAUTH_CLIENT_CREDENTIALS: 'oauth:clientCredentials',
+  OAUTH_PASSWORD_GRANT: 'oauth:passwordGrant',
 } as const;
 
 

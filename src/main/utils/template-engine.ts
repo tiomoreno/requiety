@@ -57,8 +57,13 @@ export class TemplateEngine {
              if (rendered.body.graphql.variables) {
                  rendered.body.graphql.variables = this.render(rendered.body.graphql.variables, context);
              }
+         } else if ((rendered.body.type === 'form-data' || rendered.body.type === 'form-urlencoded') && rendered.body.params) {
+             rendered.body.params = rendered.body.params.map((param: { name: string; value: string; enabled: boolean }) => ({
+                 ...param,
+                 name: this.render(param.name, context),
+                 value: this.render(param.value, context),
+             }));
          }
-         // TODO: Handle form-data logic if/when implemented
     }
 
     // 4. Render Auth

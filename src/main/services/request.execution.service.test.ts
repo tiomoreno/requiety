@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RequestExecutionService } from './request.execution.service';
 import { TemplateEngine } from '../utils/template-engine';
 import { HttpService } from '../http/client';
-import { AssertionService } from './assertion.service';
+import * as assertionService from './assertion.service';
 import { ScriptService } from './script.service';
 import * as models from '../database/models';
 import * as fileManager from '../utils/file-manager';
@@ -52,6 +52,7 @@ describe('RequestExecutionService', () => {
     vi.mocked(models.getActiveEnvironment).mockResolvedValue({ _id: 'e1', name: 'Env', workspaceId: 'w1', isActive: true, created: 0, modified: 0, type: 'Environment' });
     vi.mocked(models.getVariablesByEnvironment).mockResolvedValue([{ _id: 'v1', key: 'VAR', value: 'VAL', isSecret: false, environmentId: 'e1', created: 0, modified: 0, type: 'Variable' }]);
     vi.mocked(models.createResponse).mockResolvedValue({ ...mockResponse, type: 'Response', requestId: 'req1', bodyPath: '/path/to/body', created: 0, modified: 0 });
+    vi.mocked(models.getSettings).mockResolvedValue({ _id: 'settings', type: 'Settings', timeout: 30000, followRedirects: true, validateSSL: true, maxRedirects: 10, theme: 'auto', fontSize: 14, maxHistoryResponses: 50, created: 0, modified: 0 });
     
     vi.mocked(TemplateEngine.renderRequest).mockReturnValue({ ...mockRequest });
     
@@ -123,16 +124,16 @@ describe('RequestExecutionService', () => {
   });
 
   it('should run assertions if present', async () => {
-    const req = { ...mockRequest, assertions: [{ id: 'a1', type: 'status', operator: 'equals', value: '200' }] };
+    const req = { ...mockRequest, assertions: [{ id: 'a1', source: 'status', operator: 'equals', value: '200', enabled: true }] };
     vi.mocked(TemplateEngine.renderRequest).mockReturnValue(req);
-    
-    vi.mocked(AssertionService.runAssertions).mockResolvedValue({
-        passed: 1, failed: 0, results: [{ assertionId: 'a1', passed: true }]
+
+    vi.mocked(assertionService.runAssertions).mockReturnValue({
+        passed: 1, failed: 0, total: 1, results: [{ assertionId: 'a1', status: 'pass' }]
     });
 
     await RequestExecutionService.executeRequest(req as any);
 
-    expect(AssertionService.runAssertions).toHaveBeenCalled();
+    expect(assertionService.runAssertions).toHaveBeenCalled();
     expect(models.createResponse).toHaveBeenCalledWith(expect.objectContaining({
         testResults: expect.objectContaining({ passed: 1 })
     }));

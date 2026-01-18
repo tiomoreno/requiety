@@ -10,7 +10,7 @@ import { RequestExecutionService } from './request.execution.service';
 
 export class RunnerService {
   private static status: RunnerStatus = 'idle';
-  private static shouldStop: boolean = false;
+  private static shouldStop = false;
 
   /**
    * Start a collection run
@@ -134,38 +134,39 @@ export class RunnerService {
    * Helper to fetch all requests in a folder/workspace recursively
    */
   private static async fetchRequestsFlattened(targetId: string, type: 'folder' | 'workspace'): Promise<Request[]> {
-     return await this.getAllRequestsRecursive(targetId);
-  }
-
-  private static async getAllRequestsRecursive(parentId: string): Promise<Request[]> {
-     // Use dynamic import to avoid potential circular deps or load issues in some envs
-     const requestDb = await import('../database').then(m => m.getDatabase('Request'));
-     const directRequests = await new Promise<Request[]>((resolve, reject) => {
-         requestDb.find({ parentId }, (err: any, docs: Request[]) => {
-             if (err) reject(err);
-             else resolve(docs);
-         });
-     });
-
-     const folderDb = await import('../database').then(m => m.getDatabase('Folder'));
-     const subFolders = await new Promise<any[]>((resolve, reject) => {
-         folderDb.find({ parentId }, (err: any, docs: any[]) => {
-             if (err) reject(err);
-             else resolve(docs);
-         });
-     });
-
-     let allRequests = [...directRequests];
-
-    // Parallel recursive fetch
-    const subRequestPromises = subFolders.map(folder => this.getAllRequestsRecursive(folder._id));
-    const subResultGroups = await Promise.all(subRequestPromises);
+    const { getRequestsByWorkspace, getFoldersByWorkspace } = await import('../database/models');
     
-    for (const group of subResultGroups) {
-        allRequests = allRequests.concat(group);
+    if (type === 'workspace') {
+      const requests = await getRequestsByWorkspace(targetId);
+      return requests.sort((a, b) => a.sortOrder - b.sortOrder);
     }
+
+    // For folders, we need to get all child requests recursively.
+    const allRequests: Request[] = [];
+    const folderQueue: string[] = [targetId];
     
-    // Sort by sortOrder
+    // This can be optimized, but for now a simple BFS-like traversal is fine.
+    // We can reuse getRequestsByWorkspace if we can get all folder IDs first.
+    const { getDatabase, dbOperation } = await import('../database');
+
+    const folderDb = getDatabase('Folder');
+    const requestDb = getDatabase('Request');
+
+    let currentParentId = folderQueue.shift();
+    while (currentParentId) {
+      // Get requests in current folder
+      const requestsInFolder = await dbOperation<Request[]>(cb => requestDb.find({ parentId: currentParentId }, cb));
+      allRequests.push(...requestsInFolder);
+
+      // Get subfolders and add to queue
+      const subFolders = await dbOperation<any[]>(cb => folderDb.find({ parentId: currentParentId }, cb));
+      for (const sub of subFolders) {
+        folderQueue.push(sub._id);
+      }
+      
+      currentParentId = folderQueue.shift();
+    }
+
     return allRequests.sort((a, b) => a.sortOrder - b.sortOrder);
   }
 }

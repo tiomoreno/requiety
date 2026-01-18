@@ -11,7 +11,8 @@ export type DocumentType =
   | 'Response'
   | 'Environment'
   | 'Variable'
-  | 'Settings';
+  | 'Settings'
+  | 'OAuth2Token';
 
 export interface BaseDocument {
   _id: string;
@@ -44,7 +45,7 @@ export interface Folder extends BaseDocument {
 // Request
 // ============================================================================
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'WS';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'WS' | 'GRPC';
 
 export interface WebSocketMessage {
   id: string;
@@ -53,9 +54,36 @@ export interface WebSocketMessage {
   timestamp: number;
 }
 
-export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw' | 'graphql';
+export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw' | 'graphql' | 'grpc';
 
-export type AuthType = 'none' | 'basic' | 'bearer';
+export type AuthType = 'none' | 'basic' | 'bearer' | 'oauth2';
+
+export type OAuth2GrantType = 'authorization_code' | 'client_credentials' | 'implicit' | 'password';
+
+export interface OAuth2Config {
+  grantType: OAuth2GrantType;
+  authUrl: string;
+  tokenUrl: string;
+  clientId: string;
+  clientSecret?: string;
+  redirectUri: string;
+  scope?: string;
+  pkceEnabled?: boolean;
+  accessTokenParamName?: string;
+  // For password grant
+  username?: string;
+  password?: string;
+}
+
+export interface OAuth2Token extends BaseDocument {
+  type: 'OAuth2Token';
+  requestId: string; // Links token to a specific request's auth config
+  accessToken: string;
+  refreshToken?: string;
+  tokenType: string;
+  expiresAt?: number; // Unix timestamp
+  scope?: string;
+}
 
 export interface RequestHeader {
   name: string;
@@ -69,6 +97,8 @@ export interface RequestBodyParam {
   name: string;
   value: string;
   enabled: boolean;
+  type?: 'text' | 'file';  // For form-data file uploads
+  filePath?: string;        // File path when type is 'file'
 }
 
 export interface RequestBody {
@@ -86,6 +116,7 @@ export interface Authentication {
   username?: string; // for basic
   password?: string; // for basic
   token?: string; // for bearer
+  oauth2?: OAuth2Config; // for oauth2
 }
 
 export interface Request extends BaseDocument {
@@ -101,6 +132,13 @@ export interface Request extends BaseDocument {
   assertions?: Assertion[];
   preRequestScript?: string;
   postRequestScript?: string;
+  grpc?: RequestGrpc;
+}
+
+export interface RequestGrpc {
+  protoFilePath?: string;
+  service?: string;
+  method?: string;
 }
 
 // ============================================================================

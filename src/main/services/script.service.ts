@@ -1,48 +1,91 @@
-import vm from 'node:vm';
+import { createContext, runInContext } from 'node:vm';
+
+const DEFAULT_TIMEOUT_MS = 1000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SandboxContext = Record<string, any>;
 
 export class ScriptService {
-  /**
-   * Executes a script within a sandboxed environment.
-   * @param script The JavaScript code to execute.
-   * @param context The context object accessible to the script (e.g. { pm: ... })
-   * @param timeout Timeout in milliseconds (default: 1000ms)
-   * @returns The modified context.
-   */
-  static async executeScript(script: string, context: Record<string, any>, timeout = 1000): Promise<Record<string, any>> {
-    if (!script || !script.trim()) {
+  static async executeScript<T extends SandboxContext>(
+    script: string,
+    context: T,
+    timeout: number = DEFAULT_TIMEOUT_MS
+  ): Promise<T> {
+    if (!script) {
       return context;
     }
 
-    try {
-      const sandbox = {
-        ...context,
-        console: {
-          log: (...args: any[]) => console.log('[Script Log]', ...args),
-          error: (...args: any[]) => console.error('[Script Error]', ...args),
-          info: (...args: any[]) => console.info('[Script Info]', ...args),
-          warn: (...args: any[]) => console.warn('[Script Warn]', ...args),
-        },
-        JSON,
-        setTimeout, // Warning: async operations in VM might be tricky if process exits
-        clearTimeout,
-        // Block dangerous globals
-        process: undefined,
-        require: undefined,
-      };
+    // Create a safe sandbox with only allowed globals
+    const sandbox: SandboxContext = {
+      ...context,
+      // Safe built-ins
+      JSON: JSON,
+      Math: Math,
+      Date: Date,
+      Object: {
+        keys: Object.keys,
+        values: Object.values,
+        entries: Object.entries,
+        assign: Object.assign,
+        freeze: Object.freeze,
+        seal: Object.seal,
+        create: Object.create,
+        fromEntries: Object.fromEntries,
+        hasOwn: Object.hasOwn,
+      },
+      Array: {
+        isArray: Array.isArray,
+        from: Array.from,
+        of: Array.of,
+      },
+      // Wrapped console that prefixes output
+      console: {
+        log: (...args: unknown[]) => console.log('[Script Log]', ...args),
+        warn: (...args: unknown[]) => console.warn('[Script Warn]', ...args),
+        error: (...args: unknown[]) => console.error('[Script Error]', ...args),
+        info: (...args: unknown[]) => console.info('[Script Info]', ...args),
+      },
+      // String utilities
+      parseInt,
+      parseFloat,
+      isNaN,
+      isFinite,
+      encodeURI,
+      decodeURI,
+      encodeURIComponent,
+      decodeURIComponent,
+      // Blocked - explicitly set to undefined
+      process: undefined,
+      require: undefined,
+      module: undefined,
+      exports: undefined,
+      global: undefined,
+      globalThis: undefined,
+      Function: undefined,
+      eval: undefined,
+      Proxy: undefined,
+      Reflect: undefined,
+    };
 
-      vm.createContext(sandbox);
-      
-      const scriptToRun = new vm.Script(script);
-      
-      scriptToRun.runInContext(sandbox, {
+    const vmContext = createContext(sandbox);
+
+    try {
+      runInContext(script, vmContext, {
         timeout,
         displayErrors: true,
       });
 
-      return sandbox;
+      // Copy back any modifications to the original context
+      for (const key of Object.keys(context)) {
+        if (key in sandbox) {
+          context[key] = sandbox[key];
+        }
+      }
+
+      return context;
     } catch (error) {
-      console.error('Script execution error:', error);
-      throw error;
+      console.error('Error executing script:', error);
+      throw new Error(`Script execution failed: ${(error as Error).message}`);
     }
   }
 }

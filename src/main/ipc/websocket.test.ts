@@ -15,7 +15,7 @@ vi.mock('electron', () => ({
 vi.mock('../services/websocket.service');
 
 describe('WebSocket IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
   beforeEach(() => {
     vi.clearAllMocks();

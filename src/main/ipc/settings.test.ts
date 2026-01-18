@@ -14,7 +14,7 @@ vi.mock('electron', () => ({
 vi.mock('../database/models');
 
 describe('Settings IPC Handlers', () => {
-  let handlers: Record<string, Function> = {};
+  let handlers: Record<string, (...args: unknown[]) => unknown> = {};
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -139,7 +139,7 @@ export function RequestPanel({ request, onRequestUpdate }: RequestPanelProps) {
               {/* Response Content & History Split */}
               <div className="flex-1 flex overflow-hidden">
                  <div className="flex-1 overflow-hidden">
-                    <ResponseTabs response={response} />
+                    <ResponseTabs response={response} request={request} />
                  </div>
                  
                  {showHistory && (
