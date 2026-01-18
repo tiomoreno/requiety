@@ -1,19 +1,47 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { dataTransferService } from '../../services/data-transfer.service';
 import type { Workspace } from '../../../shared/types';
+import { WorkspaceContext } from '../../contexts/WorkspaceContext';
 
 interface WorkspaceSelectorProps {
   onCreateWorkspace: () => void;
 }
 
 export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps) => {
-  const { workspaces, activeWorkspace, setActiveWorkspace, refreshWorkspaces, deleteWorkspace } = useWorkspaces();
+  const { workspaces, setActiveWorkspace, refreshWorkspaces, deleteWorkspace } = useWorkspaces();
+  const { currentWorkspace } = useContext(WorkspaceContext);
   const [isOpen, setIsOpen] = useState(false);
+  const [syncState, setSyncState] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
 
   const handleSelect = (workspace: Workspace) => {
     setActiveWorkspace(workspace);
     setIsOpen(false);
+  };
+
+  const handleSync = async (syncFn: (workspaceId: string) => Promise<{ success: boolean; error?: string }>) => {
+    if (!currentWorkspace) return;
+    setSyncState({ loading: true, error: null });
+    try {
+      const result = await syncFn(currentWorkspace._id);
+      if (!result.success) {
+        throw new Error(result.error || 'Sync failed');
+      }
+      // On successful pull, refresh data. Push does not require immediate refresh.
+      if (syncFn === window.api.sync.pull) {
+        // This is a simple way to refresh. A more advanced implementation
+        // might selectively update the UI without a full refresh.
+        window.location.reload();
+      }
+    } catch (e: any) {
+      setSyncState({ loading: false, error: e.message });
+    } finally {
+      // Keep the dropdown open on error, otherwise close it
+      if (!syncState.error) {
+        setIsOpen(false);
+      }
+      setSyncState(prev => ({ ...prev, loading: false }));
+    }
   };
 
   return (
@@ -23,7 +51,7 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
         className="w-full px-3 py-2 text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors flex items-center justify-between"
       >
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-          {activeWorkspace?.name || 'Select Workspace'}
+          {currentWorkspace?.name || 'Select Workspace'}
         </span>
         <svg
           className={`w-4 h-4 text-gray-500 transition-transform ${
@@ -51,13 +79,13 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20 max-h-64 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-20 max-h-96 overflow-y-auto">
             {workspaces.map((workspace) => (
               <button
                 key={workspace._id}
                 onClick={() => handleSelect(workspace)}
                 className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                  activeWorkspace?._id === workspace._id
+                  currentWorkspace?._id === workspace._id
                     ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                     : 'text-gray-900 dark:text-gray-100'
                 }`}
@@ -67,6 +95,30 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
             ))}
 
             <div className="border-t border-gray-200 dark:border-gray-700 p-1">
+              {/* GIT SYNC ACTIONS */}
+              {currentWorkspace && currentWorkspace.syncRepositoryUrl && (
+                <div className="border-b border-gray-200 dark:border-gray-700 mb-1 pb-1">
+                  <button
+                    onClick={() => handleSync(window.api.sync.pull)}
+                    disabled={syncState.loading}
+                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 rounded-md disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 17l-4 4m0 0l-4-4m4 4V3"></path></svg>
+                    {syncState.loading ? 'Pulling...' : 'Pull Changes'}
+                  </button>
+                  <button
+                    onClick={() => handleSync(window.api.sync.push)}
+                    disabled={syncState.loading}
+                    className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 rounded-md disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7l4-4m0 0l4 4m-4-4v18"></path></svg>
+                    {syncState.loading ? 'Pushing...' : 'Push Changes'}
+                  </button>
+                  {syncState.error && <p className="text-xs text-red-500 px-3 py-1">{syncState.error}</p>}
+                </div>
+              )}
+
+              {/* GENERAL ACTIONS */}
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -96,27 +148,11 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
                 Import Workspace
               </button>
 
-              <button
-                onClick={async () => {
-                   setIsOpen(false);
-                   const success = await dataTransferService.importPostman();
-                   if (success) {
-                     refreshWorkspaces();
-                   }
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2 rounded-md"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13.527.099C6.955-.744.942 3.9.099 10.473c-.843 6.572 3.8 12.584 10.373 13.428 6.573.843 12.587-3.801 13.428-10.374C24.744 6.955 20.101.943 13.527.099zm2.471 7.485a.855.855 0 0 0-.593.25l-4.453 4.453-.307-.307-.643-.643c4.389-4.376 5.18-4.418 5.996-3.753zm-4.863 4.861l4.44-4.44a.62.62 0 1 1 .847.903l-4.699 4.125-.588-.588zm.33.694l-1.1.238a.06.06 0 0 1-.067-.032.06.06 0 0 1 .01-.073l.645-.645.512.512zm-2.803-.459l1.172-1.172.879.878-1.979.426a.074.074 0 0 1-.085-.039.072.072 0 0 1 .013-.093zm-3.646 6.058a.076.076 0 0 1-.107 0l-.292-.293a.076.076 0 0 1 0-.107l1.602-1.601a.076.076 0 0 1 .107 0l.293.292a.075.075 0 0 1 0 .107l-1.603 1.602zm1.262-1.262a.07.07 0 0 1-.099 0l-.265-.265a.07.07 0 0 1 0-.099l1.595-1.596a.07.07 0 0 1 .1 0l.264.265a.07.07 0 0 1 0 .099l-1.595 1.596z"/>
-                </svg>
-                Import from Postman
-              </button>
-
-              {activeWorkspace && (
+              {currentWorkspace && (
                 <button
                   onClick={async () => {
                      setIsOpen(false);
-                     await dataTransferService.exportWorkspace(activeWorkspace._id);
+                     await dataTransferService.exportWorkspace(currentWorkspace._id);
                   }}
                   className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 rounded-md"
                 >
@@ -127,12 +163,12 @@ export const WorkspaceSelector = ({ onCreateWorkspace }: WorkspaceSelectorProps)
                 </button>
               )}
 
-              {activeWorkspace && (
+              {currentWorkspace && (
                 <button
                   onClick={async () => {
                     setIsOpen(false);
-                    if (confirm(`Are you sure you want to delete workspace "${activeWorkspace.name}"? This action cannot be undone.`)) {
-                      await deleteWorkspace(activeWorkspace._id);
+                    if (confirm(`Are you sure you want to delete workspace "${currentWorkspace.name}"? This action cannot be undone.`)) {
+                      await deleteWorkspace(currentWorkspace._id);
                     }
                   }}
                   className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 rounded-md"

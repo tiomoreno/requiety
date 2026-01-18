@@ -5,6 +5,7 @@
   "description": "A modern, open-source API client for testing REST APIs",
   "main": ".vite/build/main.js",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -75,6 +76,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "form-data": "^4.0.5",
     "graphql": "^16.12.0",
+    "isomorphic-git": "^1.36.1",
     "jsonpath-plus": "^10.3.0",
     "nunjucks": "^3.2.4",
     "react": "^18.3.1",

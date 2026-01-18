@@ -18,15 +18,36 @@ export const registerSyncHandlers = () => {
     }
   });
 
-  // Export workspace data to the selected directory
-  ipcMain.handle(IPC_CHANNELS.SYNC_EXPORT, async (_, workspaceId: string, directory: string) => {
+  // Setup Git Sync for a workspace
+  ipcMain.handle(
+    IPC_CHANNELS.SYNC_SETUP,
+    async (_, { workspaceId, url, branch, token, directory }: { workspaceId: string; url: string; branch: string; token: string; directory: string }) => {
+      try {
+        await SyncService.setup(workspaceId, url, branch, token, directory);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
+  );
+
+  // Pull changes from remote
+  ipcMain.handle(IPC_CHANNELS.SYNC_PULL, async (_, workspaceId: string) => {
     try {
-      await SyncService.exportWorkspace(workspaceId, directory);
+      await SyncService.pull(workspaceId);
       return { success: true };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });
 
-  // Import logic will be added here
+  // Push changes to remote
+  ipcMain.handle(IPC_CHANNELS.SYNC_PUSH, async (_, workspaceId: string) => {
+    try {
+      await SyncService.push(workspaceId);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
 };

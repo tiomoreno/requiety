@@ -28,6 +28,12 @@ export interface BaseDocument {
 export interface Workspace extends BaseDocument {
   type: 'Workspace';
   name: string;
+  // Git Sync Configuration
+  syncDirectory?: string;
+  syncRepositoryUrl?: string;
+  syncBranch?: string;
+  syncAuthenticationType?: 'pat' | 'none';
+  syncToken?: string; // NOTE: This should be stored securely in the OS keychain, not here.
 }
 
 // ============================================================================

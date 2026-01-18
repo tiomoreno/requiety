@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog } from '../common/Dialog';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Settings } from '../../../shared/types';
+import { SyncSettings } from './SyncSettings';
 
 export function SettingsModal() {
   const { settings, updateSettings, isSettingsOpen, closeSettings } = useSettings();
@@ -63,7 +64,7 @@ export function SettingsModal() {
           </div>
         </div>
 
-        {/* Request Basics */}
+        {/* Request Defaults */}
         <div>
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 border-b pb-1 dark:border-gray-700">Request Defaults</h3>
           <div className="grid grid-cols-2 gap-4 items-center">
@@ -98,13 +99,19 @@ export function SettingsModal() {
              <label htmlFor="validate-ssl" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">Validate SSL Certificates</label>
            </div>
         </div>
+
+        {/* Git Sync */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 border-b pb-1 dark:border-gray-700">Git Sync</h3>
+          <SyncSettings />
+        </div>
       
         <div className="flex justify-end pt-4">
           <button
             onClick={handleSave}
             className="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
           >
-            Save Settings
+            Save & Close
           </button>
         </div>
       </div>

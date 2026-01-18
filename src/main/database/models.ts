@@ -32,16 +32,11 @@ export const createWorkspace = async (
 
 export const updateWorkspace = async (
   id: string,
-  data: Partial<Pick<Workspace, 'name'>>
+  data: Partial<Omit<Workspace, '_id' | 'type' | 'created' | 'modified'>>
 ): Promise<Workspace> => {
   const db = getDatabase('Workspace');
   
-  const updateData = {
-    ...data,
-    modified: getCurrentTimestamp(),
-  };
-  
-  await dbOperation((cb) => db.update({ _id: id }, { $set: updateData }, {}, cb));
+  await dbOperation((cb) => db.update({ _id: id }, { $set: data, $currentDate: { modified: true } }, {}, cb));
   
   return await dbOperation<Workspace>((cb) => db.findOne({ _id: id }, cb));
 };
@@ -104,16 +99,11 @@ export const createFolder = async (
 
 export const updateFolder = async (
   id: string,
-  data: Partial<Pick<Folder, 'name' | 'sortOrder'>>
+  data: Partial<Omit<Folder, '_id' | 'type' | 'created' | 'modified'>>
 ): Promise<Folder> => {
   const db = getDatabase('Folder');
   
-  const updateData = {
-    ...data,
-    modified: getCurrentTimestamp(),
-  };
-  
-  await dbOperation((cb) => db.update({ _id: id }, { $set: updateData }, {}, cb));
+  await dbOperation((cb) => db.update({ _id: id }, { $set: data, $currentDate: { modified: true } }, {}, cb));
   
   return await dbOperation<Folder>((cb) => db.findOne({ _id: id }, cb));
 };
@@ -150,7 +140,7 @@ export const moveFolder = async (
   await dbOperation((cb) =>
     db.update(
       { _id: id },
-      { $set: { parentId: newParentId, modified: getCurrentTimestamp() } },
+      { $set: { parentId: newParentId }, $currentDate: { modified: true } },
       {},
       cb
     )
@@ -185,18 +175,6 @@ export const getFoldersByWorkspace = async (
 ): Promise<Folder[]> => {
   const db = getDatabase('Folder');
   
-  // Get all related IDs (workspace + all subfolders)
-  // Revised logic to collect folders directly
-  
-  // Return all folders that are children of any of these parents
-  // (This effectively returns all folders in the workspace tree)
-  // We exclude folders that are parenting strictly to something else outside (unlikely)
-  // Actually, we just want to return all folders found in the traversal above (excluding workspace itself which is not a folder)
-  
-  // Optimization: The traversal ALREADY fetched the folders.
-  // But to keep it simple and consistent with NeDB structure, we can just re-query or refactor helper to return objects.
-  
-  // Revised helper approach:
   let allFolders: Folder[] = [];
   let currentParentIds = [workspaceId];
   
@@ -219,25 +197,12 @@ export const getFoldersByWorkspace = async (
 // ============================================================================
 
 export const createRequest = async (
-  data: Pick<
-    Request,
-    'name' | 'url' | 'method' | 'parentId' | 'sortOrder' | 'headers' | 'body' | 'authentication' | 'assertions' | 'preRequestScript' | 'postRequestScript'
-  >
+  data: Omit<Request, '_id' | 'type' | 'created' | 'modified'>
 ): Promise<Request> => {
   const request: Request = {
     _id: generateId('Request'),
     type: 'Request',
-    name: data.name,
-    url: data.url,
-    method: data.method,
-    parentId: data.parentId,
-    sortOrder: data.sortOrder,
-    headers: data.headers,
-    body: data.body,
-    authentication: data.authentication,
-    assertions: data.assertions || [],
-    preRequestScript: data.preRequestScript,
-    postRequestScript: data.postRequestScript,
+    ...data,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -249,21 +214,11 @@ export const createRequest = async (
 
 export const updateRequest = async (
   id: string,
-  data: Partial<
-    Pick<
-      Request,
-      'name' | 'url' | 'method' | 'sortOrder' | 'headers' | 'body' | 'authentication' | 'assertions' | 'preRequestScript' | 'postRequestScript'
-    >
-  >
+  data: Partial<Omit<Request, '_id' | 'type' | 'created' | 'modified'>>
 ): Promise<Request> => {
   const db = getDatabase('Request');
   
-  const updateData = {
-    ...data,
-    modified: getCurrentTimestamp(),
-  };
-  
-  await dbOperation((cb) => db.update({ _id: id }, { $set: updateData }, {}, cb));
+  await dbOperation((cb) => db.update({ _id: id }, { $set: data, $currentDate: { modified: true } }, {}, cb));
   
   return await dbOperation<Request>((cb) => db.findOne({ _id: id }, cb));
 };
@@ -272,10 +227,7 @@ export const deleteRequest = async (id: string): Promise<void> => {
   const db = getDatabase('Request');
   
   // Delete all responses for this request
-  const responses = await getResponseHistory(id);
-  for (const response of responses) {
-    await deleteResponse(response._id);
-  }
+  await deleteResponseHistory(id);
   
   // Delete request
   await dbOperation((cb) => db.remove({ _id: id }, {}, cb));
@@ -287,17 +239,11 @@ export const duplicateRequest = async (id: string): Promise<Request> => {
     throw new Error(`Request ${id} not found`);
   }
   
+  const { _id, type, created, modified, name, ...rest } = original;
+
   return await createRequest({
     name: `${original.name} (Copy)`,
-    url: original.url,
-    method: original.method,
-    parentId: original.parentId,
-    sortOrder: original.sortOrder + 1,
-    headers: original.headers,
-    body: original.body,
-    authentication: original.authentication,
-    preRequestScript: original.preRequestScript,
-    postRequestScript: original.postRequestScript,
+    ...rest,
   });
 };
 
@@ -306,10 +252,8 @@ export const getRequestsByWorkspace = async (
 ): Promise<Request[]> => {
   const db = getDatabase('Request');
   
-  // 1. Get all potential parent IDs (workspace + all folders)
   const allFolderIds = await getWorkspaceFolderIds(workspaceId);
   
-  // 2. Find all requests that belong to any of these parents
   return await dbOperation<Request[]>((cb) =>
     db.find({ parentId: { $in: allFolderIds } }, cb)
   );
@@ -345,8 +289,6 @@ export const getWorkspaceIdForRequest = async (requestId: string): Promise<strin
       return workspace._id;
     }
     
-    // If not workspace, it must be a folder (or we consider parentId is the next ID to check)
-    // We assume parent is Folder if not Workspace, until we hit a root or Workspace
     currentId = parentId;
     type = 'Folder';
     depth++;
@@ -360,21 +302,12 @@ export const getWorkspaceIdForRequest = async (requestId: string): Promise<strin
 // ============================================================================
 
 export const createResponse = async (
-  data: Pick<
-    Response,
-    'requestId' | 'statusCode' | 'statusMessage' | 'headers' | 'bodyPath' | 'elapsedTime' | 'testResults'
-  >
+  data: Omit<Response, '_id' | 'type' | 'created' | 'modified'>
 ): Promise<Response> => {
   const response: Response = {
     _id: generateId('Response'),
     type: 'Response',
-    requestId: data.requestId,
-    statusCode: data.statusCode,
-    statusMessage: data.statusMessage,
-    headers: data.headers,
-    bodyPath: data.bodyPath,
-    elapsedTime: data.elapsedTime,
-    testResults: data.testResults,
+    ...data,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -417,14 +350,13 @@ export const deleteResponseHistory = async (requestId: string): Promise<void> =>
 // ============================================================================
 
 export const createEnvironment = async (
-  data: Pick<Environment, 'name' | 'workspaceId'>
+  data: Omit<Environment, '_id' | 'type' | 'created' | 'modified' | 'isActive'>
 ): Promise<Environment> => {
   const environment: Environment = {
     _id: generateId('Environment'),
     type: 'Environment',
-    name: data.name,
-    workspaceId: data.workspaceId,
     isActive: false,
+    ...data,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -435,16 +367,11 @@ export const createEnvironment = async (
 
 export const updateEnvironment = async (
   id: string,
-  data: Partial<Pick<Environment, 'name'>>
+  data: Partial<Omit<Environment, '_id' | 'type' | 'created' | 'modified'>>
 ): Promise<Environment> => {
   const db = getDatabase('Environment');
   
-  const updateData = {
-    ...data,
-    modified: getCurrentTimestamp(),
-  };
-  
-  await dbOperation((cb) => db.update({ _id: id }, { $set: updateData }, {}, cb));
+  await dbOperation((cb) => db.update({ _id: id }, { $set: data, $currentDate: { modified: true } }, {}, cb));
   
   return await dbOperation<Environment>((cb) => db.findOne({ _id: id }, cb));
 };
@@ -453,10 +380,7 @@ export const deleteEnvironment = async (id: string): Promise<void> => {
   const db = getDatabase('Environment');
   
   // Delete all variables in environment
-  const variables = await getVariablesByEnvironment(id);
-  for (const variable of variables) {
-    await deleteVariable(variable._id);
-  }
+  await dbOperation((cb) => getDatabase('Variable').remove({ environmentId: id }, { multi: true }, cb));
   
   // Delete environment
   await dbOperation((cb) => db.remove({ _id: id }, {}, cb));
@@ -465,13 +389,11 @@ export const deleteEnvironment = async (id: string): Promise<void> => {
 export const activateEnvironment = async (id: string): Promise<void> => {
   const db = getDatabase('Environment');
   
-  // Get the environment to find its workspace
   const env = await dbOperation<Environment>((cb) => db.findOne({ _id: id }, cb));
   if (!env) {
     throw new Error(`Environment ${id} not found`);
   }
   
-  // Deactivate all environments in the workspace
   await dbOperation((cb) =>
     db.update(
       { workspaceId: env.workspaceId },
@@ -481,7 +403,6 @@ export const activateEnvironment = async (id: string): Promise<void> => {
     )
   );
   
-  // Activate the selected environment
   await dbOperation((cb) =>
     db.update({ _id: id }, { $set: { isActive: true } }, {}, cb)
   );
@@ -510,15 +431,12 @@ export const getActiveEnvironment = async (
 // ============================================================================
 
 export const createVariable = async (
-  data: Pick<Variable, 'environmentId' | 'key' | 'value' | 'isSecret'>
+  data: Omit<Variable, '_id' | 'type' | 'created' | 'modified'>
 ): Promise<Variable> => {
   const variable: Variable = {
     _id: generateId('Variable'),
     type: 'Variable',
-    environmentId: data.environmentId,
-    key: data.key,
-    value: data.value,
-    isSecret: data.isSecret,
+    ...data,
     created: getCurrentTimestamp(),
     modified: getCurrentTimestamp(),
   };
@@ -529,18 +447,29 @@ export const createVariable = async (
 
 export const updateVariable = async (
   id: string,
-  data: Partial<Pick<Variable, 'key' | 'value' | 'isSecret'>>
+  data: Partial<Omit<Variable, '_id' | 'type' | 'created' | 'modified'>>
 ): Promise<Variable> => {
   const db = getDatabase('Variable');
+  
+  await dbOperation((cb) => db.update({ _id: id }, { $set: data, $currentDate: { modified: true } }, {}, cb));
+  
+  return await dbOperation<Variable>((cb) => db.findOne({ _id: id }, cb));
+};
+
+export const upsertVariable = async (
+  data: Omit<Variable, '_id' | 'type' | 'created' | 'modified'>
+): Promise<Variable> => {
+  const db = getDatabase('Variable');
+  const query = { environmentId: data.environmentId, key: data.key };
   
   const updateData = {
     ...data,
     modified: getCurrentTimestamp(),
   };
-  
-  await dbOperation((cb) => db.update({ _id: id }, { $set: updateData }, {}, cb));
-  
-  return await dbOperation<Variable>((cb) => db.findOne({ _id: id }, cb));
+
+  await dbOperation(cb => db.update(query, { $set: updateData }, { upsert: true }, cb));
+
+  return await dbOperation<Variable>((cb) => db.findOne(query, cb));
 };
 
 export const deleteVariable = async (id: string): Promise<void> => {
@@ -561,13 +490,13 @@ export const getVariablesByEnvironment = async (
 // Settings Operations
 // ============================================================================
 
+// ... (rest of the file is unchanged)
 export const getSettings = async (): Promise<Settings> => {
   const db = getDatabase('Settings');
   const settings = await dbOperation<Settings>((cb) =>
     db.findOne({ _id: 'settings' }, cb)
   );
   
-  // If settings don't exist, create default settings
   if (!settings) {
     return await createDefaultSettings();
   }

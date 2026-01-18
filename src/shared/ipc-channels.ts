@@ -81,6 +81,9 @@ export const IPC_CHANNELS = {
   SYNC_SET_DIRECTORY: 'sync:setDirectory',
   SYNC_EXPORT: 'sync:export',
   SYNC_IMPORT: 'sync:import',
+  SYNC_SETUP: 'sync:setup',
+  SYNC_PULL: 'sync:pull',
+  SYNC_PUSH: 'sync:push',
 
   // WebSocket
   WS_CONNECT: 'ws:connect',
