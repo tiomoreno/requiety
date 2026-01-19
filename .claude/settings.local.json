@@ -15,7 +15,8 @@
       "Bash(npm run format:check:*)",
       "Bash(npm run package:*)",
       "Bash(timeout 15 npm start)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -1,11 +1,4 @@
-import type {
-  Request,
-  Response,
-  ApiResponse,
-  HttpMethod,
-  RequestBody,
-  Authentication,
-} from '@shared/types';
+import type { Request, Response, RequestBody, Authentication } from '@shared/types';
 
 /**
  * Request service - wrapper around window.api.request

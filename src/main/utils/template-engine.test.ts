@@ -1,8 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { TemplateEngine } from './template-engine';
-import { Variable } from '@shared/types';
-import nunjucks from 'nunjucks';
+import type { Variable } from '@shared/types';
 import { LoggerService } from '../services/logger.service';
 
 vi.mock('nunjucks', async () => {

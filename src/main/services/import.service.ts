@@ -5,9 +5,8 @@ import {
   createFolder,
   createRequest,
   updateFolder,
-  moveFolder,
 } from '../database/models';
-import { Workspace, Environment, Request, Folder, Variable } from '@shared/types';
+import type { Workspace, Environment, Request, Folder, Variable } from '@shared/types';
 
 interface ExportData {
   version: string;
