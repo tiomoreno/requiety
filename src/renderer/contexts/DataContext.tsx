@@ -1,8 +1,9 @@
 import { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { Folder, Request, WorkspaceTreeItem } from '../../shared/types';
+import type { Folder, Request, WorkspaceTreeItem } from '@shared/types';
 import { folderService } from '../services/folder.service';
 import { requestService } from '../services/request.service';
 import { buildTree } from '../utils/tree-builder';
+import { logger } from '../utils/logger';
 
 interface DataContextType {
   folders: Folder[];
@@ -75,7 +76,7 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
       setRequests(requestsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
-      console.error('Error loading data:', err);
+      logger.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
@@ -205,7 +206,7 @@ export const DataProvider = ({ children, workspaceId }: DataProviderProps) => {
     try {
       await requestService.send(id);
     } catch (err) {
-      console.error('Failed to send request:', err);
+      logger.error('Failed to send request:', err);
       setError(err instanceof Error ? err.message : 'Failed to send request');
     }
   };

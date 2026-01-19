@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { WebSocketService } from '../services/websocket.service';
+import { LoggerService } from '../services/logger.service';
 
 export function registerWebSocketHandlers() {
   ipcMain.on(IPC_CHANNELS.WS_CONNECT, (event, { requestId, url }) => {
@@ -15,7 +16,7 @@ export function registerWebSocketHandlers() {
     try {
       WebSocketService.send(requestId, message);
     } catch (error) {
-      console.error('Failed to send WS message:', error);
+      LoggerService.error('Failed to send WS message:', error);
     }
   });
 }

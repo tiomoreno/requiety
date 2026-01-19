@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { requestService } from './request.service';
-import { HttpMethod } from '../../shared/types';
+import { HttpMethod } from '@shared/types';
 
 // Mock window.api
 const mockRequestApi = {
@@ -15,8 +15,8 @@ const mockRequestApi = {
 
 vi.stubGlobal('window', {
   api: {
-    request: mockRequestApi
-  }
+    request: mockRequestApi,
+  },
 });
 
 describe('requestService', () => {
@@ -50,9 +50,9 @@ describe('requestService', () => {
         sortOrder: 0,
         headers: [],
         body: { type: 'none' } as any,
-        authentication: { type: 'none' } as any
+        authentication: { type: 'none' } as any,
       };
-      
+
       const createdRequest = { ...newRequest, _id: '123' };
       mockRequestApi.create.mockResolvedValue({ success: true, data: createdRequest });
 
@@ -66,7 +66,7 @@ describe('requestService', () => {
     it('should call api.request.update', async () => {
       const updateData = { name: 'Updated Name' };
       const updatedRequest = { _id: '1', name: 'Updated Name' };
-      
+
       mockRequestApi.update.mockResolvedValue({ success: true, data: updatedRequest });
 
       const result = await requestService.update('1', updateData);
@@ -84,13 +84,13 @@ describe('requestService', () => {
   });
 
   describe('send', () => {
-      it('should call api.request.send', async () => {
-          const mockResponse = { statusCode: 200 };
-          mockRequestApi.send.mockResolvedValue({ success: true, data: mockResponse });
-          
-          const result = await requestService.send('1');
-          expect(mockRequestApi.send).toHaveBeenCalledWith('1');
-          expect(result).toEqual(mockResponse);
-      });
+    it('should call api.request.send', async () => {
+      const mockResponse = { statusCode: 200 };
+      mockRequestApi.send.mockResolvedValue({ success: true, data: mockResponse });
+
+      const result = await requestService.send('1');
+      expect(mockRequestApi.send).toHaveBeenCalledWith('1');
+      expect(result).toEqual(mockResponse);
+    });
   });
 });

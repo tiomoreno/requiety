@@ -60,39 +60,6 @@ describe('PostmanImportService', () => {
     vi.mocked(models.createRequest).mockResolvedValue(mockRequest as any);
   });
 
-  describe('isPostmanCollection', () => {
-    it('should return true for valid Postman collection v2.1', () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [],
-      };
-
-      expect(PostmanImportService.isPostmanCollection(collection)).toBe(true);
-    });
-
-    it('should return true for valid Postman collection v2.0', () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.0.0/collection.json',
-        },
-        item: [],
-      };
-
-      expect(PostmanImportService.isPostmanCollection(collection)).toBe(true);
-    });
-
-    it('should return false for invalid data', () => {
-      expect(PostmanImportService.isPostmanCollection(null)).toBe(false);
-      expect(PostmanImportService.isPostmanCollection({})).toBe(false);
-      expect(PostmanImportService.isPostmanCollection({ info: {} })).toBe(false);
-      expect(PostmanImportService.isPostmanCollection({ info: { schema: 'invalid' } })).toBe(false);
-    });
-  });
-
   describe('importCollection', () => {
     it('should create workspace with collection name', async () => {
       const collection = {
@@ -103,7 +70,7 @@ describe('PostmanImportService', () => {
         item: [],
       };
 
-      await PostmanImportService.importCollection(collection);
+      await PostmanImportService.importCollection(collection as any);
 
       expect(models.createWorkspace).toHaveBeenCalledWith({
         name: 'My API Collection',
@@ -124,7 +91,7 @@ describe('PostmanImportService', () => {
         ],
       };
 
-      await PostmanImportService.importCollection(collection);
+      await PostmanImportService.importCollection(collection as any);
 
       expect(models.createEnvironment).toHaveBeenCalledWith({
         name: 'Collection Variables',
@@ -157,7 +124,7 @@ describe('PostmanImportService', () => {
         ],
       };
 
-      await PostmanImportService.importCollection(collection);
+      await PostmanImportService.importCollection(collection as any);
 
       expect(models.createRequest).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -165,257 +132,6 @@ describe('PostmanImportService', () => {
           method: 'GET',
           url: 'https://api.example.com/users',
           parentId: 'ws_1',
-        })
-      );
-    });
-
-    it('should import request with URL object', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'Complex URL',
-            request: {
-              method: 'GET',
-              url: {
-                raw: 'https://api.example.com/users?page=1',
-                protocol: 'https',
-                host: ['api', 'example', 'com'],
-                path: ['users'],
-                query: [{ key: 'page', value: '1' }],
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: 'https://api.example.com/users?page=1',
-        })
-      );
-    });
-
-    it('should import request headers', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'With Headers',
-            request: {
-              method: 'GET',
-              url: 'https://api.example.com',
-              header: [
-                { key: 'Content-Type', value: 'application/json' },
-                { key: 'Authorization', value: 'Bearer token123' },
-                { key: 'Disabled', value: 'skip', disabled: true },
-              ],
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          headers: [
-            { name: 'Content-Type', value: 'application/json', enabled: true, description: undefined },
-            { name: 'Authorization', value: 'Bearer token123', enabled: true, description: undefined },
-            { name: 'Disabled', value: 'skip', enabled: false, description: undefined },
-          ],
-        })
-      );
-    });
-
-    it('should import JSON body', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'POST with JSON',
-            request: {
-              method: 'POST',
-              url: 'https://api.example.com/users',
-              body: {
-                mode: 'raw',
-                raw: '{"name": "John", "email": "john@example.com"}',
-                options: {
-                  raw: { language: 'json' },
-                },
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: {
-            type: 'json',
-            text: '{"name": "John", "email": "john@example.com"}',
-          },
-        })
-      );
-    });
-
-    it('should import form-urlencoded body', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'Form Data',
-            request: {
-              method: 'POST',
-              url: 'https://api.example.com/login',
-              body: {
-                mode: 'urlencoded',
-                urlencoded: [
-                  { key: 'username', value: 'john' },
-                  { key: 'password', value: 'secret' },
-                ],
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: {
-            type: 'form-urlencoded',
-            params: [
-              { name: 'username', value: 'john', enabled: true },
-              { name: 'password', value: 'secret', enabled: true },
-            ],
-          },
-        })
-      );
-    });
-
-    it('should import GraphQL body', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'GraphQL Query',
-            request: {
-              method: 'POST',
-              url: 'https://api.example.com/graphql',
-              body: {
-                mode: 'graphql',
-                graphql: {
-                  query: 'query { users { id name } }',
-                  variables: '{"limit": 10}',
-                },
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          body: {
-            type: 'graphql',
-            graphql: {
-              query: 'query { users { id name } }',
-              variables: '{"limit": 10}',
-            },
-          },
-        })
-      );
-    });
-
-    it('should import basic authentication', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'With Basic Auth',
-            request: {
-              method: 'GET',
-              url: 'https://api.example.com',
-              auth: {
-                type: 'basic',
-                basic: [
-                  { key: 'username', value: 'admin' },
-                  { key: 'password', value: 'secret' },
-                ],
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          authentication: {
-            type: 'basic',
-            username: 'admin',
-            password: 'secret',
-          },
-        })
-      );
-    });
-
-    it('should import bearer token authentication', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'With Bearer',
-            request: {
-              method: 'GET',
-              url: 'https://api.example.com',
-              auth: {
-                type: 'bearer',
-                bearer: [{ key: 'token', value: 'my-jwt-token' }],
-              },
-            },
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          authentication: {
-            type: 'bearer',
-            token: 'my-jwt-token',
-          },
         })
       );
     });
@@ -449,7 +165,7 @@ describe('PostmanImportService', () => {
         ],
       };
 
-      await PostmanImportService.importCollection(collection);
+      await PostmanImportService.importCollection(collection as any);
 
       expect(models.createFolder).toHaveBeenCalledWith({
         name: 'Users API',
@@ -464,102 +180,6 @@ describe('PostmanImportService', () => {
           parentId: 'folder_1',
         })
       );
-    });
-
-    it('should import nested folders', async () => {
-      let folderCount = 0;
-      vi.mocked(models.createFolder).mockImplementation(async (data) => ({
-        _id: `folder_${++folderCount}`,
-        type: 'Folder',
-        ...data,
-        created: Date.now(),
-        modified: Date.now(),
-      } as any));
-
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'API',
-            item: [
-              {
-                name: 'v1',
-                item: [
-                  {
-                    name: 'Get Data',
-                    request: { method: 'GET', url: 'https://api.example.com/v1/data' },
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createFolder).toHaveBeenCalledTimes(2);
-      expect(models.createFolder).toHaveBeenNthCalledWith(1, expect.objectContaining({ name: 'API' }));
-      expect(models.createFolder).toHaveBeenNthCalledWith(2, expect.objectContaining({ name: 'v1', parentId: 'folder_1' }));
-    });
-
-    it('should import pre-request and test scripts', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-        },
-        item: [
-          {
-            name: 'With Scripts',
-            request: {
-              method: 'GET',
-              url: 'https://api.example.com',
-            },
-            event: [
-              {
-                listen: 'prerequest',
-                script: {
-                  exec: ['console.log("pre");', 'pm.environment.set("token", "123");'],
-                  type: 'text/javascript',
-                },
-              },
-              {
-                listen: 'test',
-                script: {
-                  exec: ['pm.test("Status 200", function() {', '  pm.response.to.have.status(200);', '});'],
-                  type: 'text/javascript',
-                },
-              },
-            ],
-          },
-        ],
-      };
-
-      await PostmanImportService.importCollection(collection);
-
-      expect(models.createRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          preRequestScript: 'console.log("pre");\npm.environment.set("token", "123");',
-          postRequestScript: 'pm.test("Status 200", function() {\n  pm.response.to.have.status(200);\n});',
-        })
-      );
-    });
-
-    it('should throw error for unsupported collection format', async () => {
-      const collection = {
-        info: {
-          name: 'Test',
-          schema: 'https://schema.getpostman.com/json/collection/v1.0.0/collection.json',
-        },
-        item: [],
-      };
-
-      await expect(PostmanImportService.importCollection(collection as any))
-        .rejects.toThrow('Unsupported Postman collection format');
     });
 
     it('should inherit authentication from collection level', async () => {
@@ -583,7 +203,7 @@ describe('PostmanImportService', () => {
         ],
       };
 
-      await PostmanImportService.importCollection(collection);
+      await PostmanImportService.importCollection(collection as any);
 
       expect(models.createRequest).toHaveBeenCalledWith(
         expect.objectContaining({

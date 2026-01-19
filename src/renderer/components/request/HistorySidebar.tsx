@@ -1,7 +1,8 @@
 import { formatDistanceToNow } from 'date-fns';
-import { Response } from '../../../shared/types';
+import { Response } from '@shared/types';
 import { useEffect, useState } from 'react';
 import { responseService } from '../../services/response.service';
+import { logger } from '../../utils/logger';
 
 interface HistorySidebarProps {
   requestId: string;
@@ -10,7 +11,12 @@ interface HistorySidebarProps {
   refreshTrigger?: number; // Prop to trigger refresh when a new response is added
 }
 
-export function HistorySidebar({ requestId, onSelectResponse, activeResponseId, refreshTrigger }: HistorySidebarProps) {
+export function HistorySidebar({
+  requestId,
+  onSelectResponse,
+  activeResponseId,
+  refreshTrigger,
+}: HistorySidebarProps) {
   const [history, setHistory] = useState<Response[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +30,7 @@ export function HistorySidebar({ requestId, onSelectResponse, activeResponseId, 
       const data = await responseService.getHistory(requestId);
       setHistory(data);
     } catch (error) {
-      console.error('Failed to load history:', error);
+      logger.error('Failed to load history:', error);
     } finally {
       setLoading(false);
     }
@@ -55,7 +61,9 @@ export function HistorySidebar({ requestId, onSelectResponse, activeResponseId, 
             key={item._id}
             onClick={() => onSelectResponse(item)}
             className={`p-3 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-              activeResponseId === item._id ? 'bg-primary-50 dark:bg-primary-900/10 border-l-2 border-l-primary-600' : ''
+              activeResponseId === item._id
+                ? 'bg-primary-50 dark:bg-primary-900/10 border-l-2 border-l-primary-600'
+                : ''
             }`}
           >
             <div className="flex items-center justify-between mb-1">
@@ -71,7 +79,7 @@ export function HistorySidebar({ requestId, onSelectResponse, activeResponseId, 
               <span className="text-xs text-gray-400">{item.elapsedTime}ms</span>
             </div>
             <div className="text-[10px] text-gray-400 truncate">
-               {formatDistanceToNow(new Date(item.created), { addSuffix: true })}
+              {formatDistanceToNow(new Date(item.created), { addSuffix: true })}
             </div>
           </div>
         ))}

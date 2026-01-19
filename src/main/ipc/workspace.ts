@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import type { Workspace } from '../../shared/types';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
+import type { Workspace } from '@shared/types';
 import {
   createWorkspace,
   updateWorkspace,
@@ -8,27 +8,25 @@ import {
   getAllWorkspaces,
   getWorkspaceById,
 } from '../database/models';
+import { LoggerService } from '../services/logger.service';
 
 /**
  * Register all workspace IPC handlers
  */
 export const registerWorkspaceHandlers = (): void => {
   // Create workspace
-  ipcMain.handle(
-    IPC_CHANNELS.WORKSPACE_CREATE,
-    async (_, data: Pick<Workspace, 'name'>) => {
-      try {
-        const workspace = await createWorkspace(data);
-        return { success: true, data: workspace };
-      } catch (error) {
-        console.error('Error creating workspace:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+  ipcMain.handle(IPC_CHANNELS.WORKSPACE_CREATE, async (_, data: Pick<Workspace, 'name'>) => {
+    try {
+      const workspace = await createWorkspace(data);
+      return { success: true, data: workspace };
+    } catch (error) {
+      LoggerService.error('Error creating workspace:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  );
+  });
 
   // Update workspace
   ipcMain.handle(
@@ -38,7 +36,7 @@ export const registerWorkspaceHandlers = (): void => {
         const workspace = await updateWorkspace(id, data);
         return { success: true, data: workspace };
       } catch (error) {
-        console.error('Error updating workspace:', error);
+        LoggerService.error('Error updating workspace:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -53,7 +51,7 @@ export const registerWorkspaceHandlers = (): void => {
       await deleteWorkspace(id);
       return { success: true };
     } catch (error) {
-      console.error('Error deleting workspace:', error);
+      LoggerService.error('Error deleting workspace:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -67,7 +65,7 @@ export const registerWorkspaceHandlers = (): void => {
       const workspaces = await getAllWorkspaces();
       return { success: true, data: workspaces };
     } catch (error) {
-      console.error('Error getting workspaces:', error);
+      LoggerService.error('Error getting workspaces:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -81,7 +79,7 @@ export const registerWorkspaceHandlers = (): void => {
       const workspace = await getWorkspaceById(id);
       return { success: true, data: workspace };
     } catch (error) {
-      console.error('Error getting workspace:', error);
+      LoggerService.error('Error getting workspace:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

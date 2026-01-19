@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { filterTree } from './tree-filter';
-import { WorkspaceTreeItem } from '../../shared/types';
+import { WorkspaceTreeItem } from '@shared/types';
 
 describe('tree-filter', () => {
   const tree: WorkspaceTreeItem[] = [
@@ -10,22 +10,20 @@ describe('tree-filter', () => {
       name: 'Folder One',
       children: [
         { id: 'req1', type: 'request', name: 'Get Users' },
-        { id: 'req2', type: 'request', name: 'Create User' }
-      ]
+        { id: 'req2', type: 'request', name: 'Create User' },
+      ],
     },
     {
       id: 'folder2',
       type: 'folder',
       name: 'Folder Two',
-      children: [
-        { id: 'req3', type: 'request', name: 'Delete Item' }
-      ]
+      children: [{ id: 'req3', type: 'request', name: 'Delete Item' }],
     },
     {
       id: 'req4',
       type: 'request',
-      name: 'Root Request'
-    }
+      name: 'Root Request',
+    },
   ];
 
   it('should return all items if query is empty', () => {
@@ -73,9 +71,9 @@ describe('tree-filter', () => {
     // 3. Else if parent matches, return item.
     // Wait, the implementation calculates filtered children FIRST.
     // Then checks if filteredChildren > 0.
-    // But if parent matches, it returns 'item'. 
+    // But if parent matches, it returns 'item'.
     // BUT 'item' in map(filterItem) is the ORIGINAL item.
-    // So if parent returns early due to match, it returns the original item with original children. 
+    // So if parent returns early due to match, it returns the original item with original children.
     // Checking lines 36-49 of tree-filter.ts:
     // if (matches) { return item; }
     // This happens AFTER checking filtered children (lines 16-31).
@@ -93,8 +91,8 @@ describe('tree-filter', () => {
     // if (matches) return item.
     // 'item' still has ORIGINAL children.
     // So yes, if folder matches, we get all children.
-    
-    expect(result[0].children?.length).toBe(1); 
+
+    expect(result[0].children?.length).toBe(1);
     expect(result[0].children?.[0].name).toBe('Delete Item');
   });
 });

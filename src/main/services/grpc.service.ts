@@ -47,7 +47,7 @@ export class GrpcService {
     return { services };
   }
 
-  static async makeUnaryCall(options: GrpcRequestOptions): Promise<any> {
+  static async makeUnaryCall(options: GrpcRequestOptions): Promise<Record<string, unknown>> {
     const packageDefinition = await protoLoader.load(options.protoFilePath, {
       keepCase: true,
       longs: String,
@@ -58,7 +58,8 @@ export class GrpcService {
 
     const proto = grpc.loadPackageDefinition(packageDefinition);
     const [packageName, serviceName] = options.service.split('.');
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const serviceConstructor = (proto[packageName] as any)[serviceName];
     if (!serviceConstructor) {
       throw new Error(`Service not found: ${options.service}`);
@@ -68,7 +69,7 @@ export class GrpcService {
     const body = JSON.parse(options.body);
 
     return new Promise((resolve, reject) => {
-      client[options.method](body, (error: Error | null, response: any) => {
+      client[options.method](body, (error: Error | null, response: Record<string, unknown>) => {
         if (error) {
           reject(error);
         } else {

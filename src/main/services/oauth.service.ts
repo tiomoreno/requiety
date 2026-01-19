@@ -2,14 +2,14 @@ import { BrowserWindow, shell } from 'electron';
 import crypto from 'crypto';
 import http from 'http';
 import { URL } from 'url';
-import type { OAuth2Config, OAuth2Token } from '../../shared/types';
+import type { OAuth2Config, OAuth2Token } from '@shared/types';
 import { saveToken, getTokenByRequestId, deleteTokenByRequestId } from '../database/models';
+import { LoggerService } from './logger.service';
 
 // PKCE helpers
 function generateCodeVerifier(): string {
   return crypto.randomBytes(32).toString('base64url');
 }
-
 
 function generateCodeChallenge(verifier: string): string {
   return crypto.createHash('sha256').update(verifier).digest('base64url');
@@ -27,10 +27,7 @@ export class OAuthService {
    * Start the authorization code flow
    * Opens a browser window for user authentication
    */
-  static async startAuthCodeFlow(
-    config: OAuth2Config,
-    requestId: string
-  ): Promise<OAuth2Token> {
+  static async startAuthCodeFlow(config: OAuth2Config, requestId: string): Promise<OAuth2Token> {
     const state = crypto.randomBytes(16).toString('hex');
     let codeVerifier: string | undefined;
     let codeChallenge: string | undefined;
@@ -61,7 +58,11 @@ export class OAuthService {
     let code: string;
 
     if (redirectUrl.hostname === 'localhost' || redirectUrl.hostname === '127.0.0.1') {
-      code = await this.startCallbackServer(redirectUrl.port || '8080', redirectUrl.pathname, state);
+      code = await this.startCallbackServer(
+        redirectUrl.port || '8080',
+        redirectUrl.pathname,
+        state
+      );
     } else {
       // For non-localhost redirects, just open browser
       // User will need to manually copy code
@@ -107,19 +108,27 @@ export class OAuthService {
 
           if (error) {
             res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h1>Authorization Failed</h1><p>You can close this window.</p></body></html>');
+            res.end(
+              '<html><body><h1>Authorization Failed</h1><p>You can close this window.</p></body></html>'
+            );
             reject(new Error(`OAuth error: ${error}`));
           } else if (state !== expectedState) {
             res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h1>Invalid State</h1><p>Security validation failed.</p></body></html>');
+            res.end(
+              '<html><body><h1>Invalid State</h1><p>Security validation failed.</p></body></html>'
+            );
             reject(new Error('State mismatch - possible CSRF attack'));
           } else if (code) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h1>Authorization Successful</h1><p>You can close this window and return to Requiety.</p></body></html>');
+            res.end(
+              '<html><body><h1>Authorization Successful</h1><p>You can close this window and return to Requiety.</p></body></html>'
+            );
             resolve(code);
           } else {
             res.writeHead(400, { 'Content-Type': 'text/html' });
-            res.end('<html><body><h1>Missing Code</h1><p>No authorization code received.</p></body></html>');
+            res.end(
+              '<html><body><h1>Missing Code</h1><p>No authorization code received.</p></body></html>'
+            );
             reject(new Error('No authorization code received'));
           }
 
@@ -135,17 +144,20 @@ export class OAuthService {
       });
 
       this.callbackServer.listen(parseInt(port), 'localhost', () => {
-        console.log(`OAuth callback server listening on http://localhost:${port}${path}`);
+        LoggerService.debug(`OAuth callback server listening on http://localhost:${port}${path}`);
       });
 
       // Timeout after 5 minutes
-      setTimeout(() => {
-        if (this.callbackServer) {
-          this.callbackServer.close();
-          this.callbackServer = null;
-          reject(new Error('Authorization timeout'));
-        }
-      }, 5 * 60 * 1000);
+      setTimeout(
+        () => {
+          if (this.callbackServer) {
+            this.callbackServer.close();
+            this.callbackServer = null;
+            reject(new Error('Authorization timeout'));
+          }
+        },
+        5 * 60 * 1000
+      );
     });
   }
 
@@ -232,10 +244,7 @@ export class OAuthService {
   /**
    * Password grant flow (Resource Owner Password Credentials)
    */
-  static async passwordGrant(
-    config: OAuth2Config,
-    requestId: string
-  ): Promise<OAuth2Token> {
+  static async passwordGrant(config: OAuth2Config, requestId: string): Promise<OAuth2Token> {
     if (!config.username || !config.password) {
       throw new Error('Username and password required for password grant');
     }
@@ -347,7 +356,9 @@ export class OAuthService {
   /**
    * Parse token response from OAuth server
    */
-  private static parseTokenResponse(data: Record<string, unknown>): Omit<OAuth2Token, '_id' | 'type' | 'created' | 'modified' | 'requestId'> {
+  private static parseTokenResponse(
+    data: Record<string, unknown>
+  ): Omit<OAuth2Token, '_id' | 'type' | 'created' | 'modified' | 'requestId'> {
     const accessToken = data.access_token as string;
     if (!accessToken) {
       throw new Error('No access_token in response');

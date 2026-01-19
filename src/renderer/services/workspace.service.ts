@@ -1,4 +1,4 @@
-import type { Workspace, ApiResponse } from '../../shared/types';
+import type { Workspace, ApiResponse } from '@shared/types';
 
 /**
  * Workspace service - wrapper around window.api.workspace
@@ -8,7 +8,7 @@ export const workspaceService = {
    * Get all workspaces
    */
   async getAll(): Promise<Workspace[]> {
-    const result = await window.api.workspace.getAll() as unknown as ApiResponse<Workspace[]>;
+    const result = (await window.api.workspace.getAll()) as unknown as ApiResponse<Workspace[]>;
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to get workspaces');
     }
@@ -19,7 +19,9 @@ export const workspaceService = {
    * Get workspace by ID
    */
   async getById(id: string): Promise<Workspace | null> {
-    const result = await window.api.workspace.getById(id) as ApiResponse<Workspace | null>;
+    const result = (await window.api.workspace.getById(
+      id
+    )) as unknown as ApiResponse<Workspace | null>;
     if (!result.success) {
       throw new Error(result.error || 'Failed to get workspace');
     }
@@ -30,7 +32,9 @@ export const workspaceService = {
    * Create a new workspace
    */
   async create(name: string): Promise<Workspace> {
-    const result = await window.api.workspace.create({ name }) as ApiResponse<Workspace>;
+    const result = (await window.api.workspace.create({
+      name,
+    })) as unknown as ApiResponse<Workspace>;
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to create workspace');
     }
@@ -41,7 +45,10 @@ export const workspaceService = {
    * Update workspace
    */
   async update(id: string, data: { name: string }): Promise<Workspace> {
-    const result = await window.api.workspace.update(id, data) as ApiResponse<Workspace>;
+    const result = (await window.api.workspace.update(
+      id,
+      data
+    )) as unknown as ApiResponse<Workspace>;
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to update workspace');
     }
@@ -52,7 +59,7 @@ export const workspaceService = {
    * Delete workspace
    */
   async delete(id: string): Promise<void> {
-    const result = await window.api.workspace.delete(id) as unknown as ApiResponse<void>;
+    const result = (await window.api.workspace.delete(id)) as unknown as ApiResponse<void>;
     if (!result.success) {
       throw new Error(result.error || 'Failed to delete workspace');
     }

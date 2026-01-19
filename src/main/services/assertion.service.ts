@@ -1,11 +1,11 @@
 import { JSONPath } from 'jsonpath-plus';
-import type { Assertion, AssertionResult, TestResult, Response } from '../../../shared/types';
+import type { Assertion, AssertionResult, TestResult, Response, JSONValue } from '@shared/types';
 
 const evaluateAssertion = (
   response: {
     statusCode: number;
     headers: { name: string; value: string }[];
-    body: any; // Parsed JSON body
+    body: JSONValue | undefined; // Parsed JSON body
     elapsedTime: number;
   },
   assertion: Assertion
@@ -16,7 +16,7 @@ const evaluateAssertion = (
   };
 
   try {
-    let actualValue: any;
+    let actualValue: JSONValue | undefined;
 
     switch (assertion.source) {
       case 'status':
@@ -25,7 +25,9 @@ const evaluateAssertion = (
         result.expectedValue = Number(assertion.value);
         break;
       case 'header': {
-        const header = response.headers.find(h => h.name.toLowerCase() === assertion.property?.toLowerCase());
+        const header = response.headers.find(
+          (h) => h.name.toLowerCase() === assertion.property?.toLowerCase()
+        );
         actualValue = header?.value;
         result.actualValue = actualValue;
         result.expectedValue = assertion.value;
@@ -35,7 +37,8 @@ const evaluateAssertion = (
         if (!assertion.property) {
           throw new Error('JSONPath property is required for jsonBody assertions.');
         }
-        const matches = JSONPath({ path: assertion.property, json: response.body });
+        // JSONPath library might return any, we assume it matches our JSONValue structure
+        const matches = JSONPath({ path: assertion.property, json: response.body as object });
         actualValue = matches.length > 0 ? matches[0] : undefined;
         result.actualValue = actualValue;
         result.expectedValue = assertion.value;
@@ -102,11 +105,11 @@ export const runAssertions = (
   response: Response,
   responseBody: string
 ): TestResult => {
-  let parsedBody: any;
+  let parsedBody: JSONValue | undefined;
   try {
     parsedBody = JSON.parse(responseBody);
   } catch (e) {
-    parsedBody = null;
+    parsedBody = undefined;
   }
 
   const responseData = {
@@ -116,13 +119,13 @@ export const runAssertions = (
     elapsedTime: response.elapsedTime,
   };
 
-  const enabledAssertions = assertions.filter(a => a.enabled);
+  const enabledAssertions = assertions.filter((a) => a.enabled);
 
-  const results: AssertionResult[] = enabledAssertions.map(assertion =>
+  const results: AssertionResult[] = enabledAssertions.map((assertion) =>
     evaluateAssertion(responseData, assertion)
   );
 
-  const passed = results.filter(r => r.status === 'pass').length;
+  const passed = results.filter((r) => r.status === 'pass').length;
   const failed = results.length - passed;
 
   return {

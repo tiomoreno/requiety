@@ -1,11 +1,12 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { exportService } from '../services/export.service';
 import { importService } from '../services/import.service';
 import { PostmanImportService } from '../services/postman-import.service';
-import { CurlImportService } from '../services/curl-import.service';
+import { CurlParser } from '../utils/parsers/curl.parser';
 import { createRequest } from '../database/models';
 import * as fs from 'fs/promises';
+import { LoggerService } from '../services/logger.service';
 
 export function registerDataTransferHandlers() {
   // Export Workspace
@@ -34,7 +35,7 @@ export function registerDataTransferHandlers() {
 
       return { success: true };
     } catch (error) {
-      console.error('Export failed:', error);
+      LoggerService.error('Export failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Export failed' };
     }
   });
@@ -65,7 +66,7 @@ export function registerDataTransferHandlers() {
 
       return { success: true, data: newWorkspace };
     } catch (error) {
-      console.error('Import failed:', error);
+      LoggerService.error('Import failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Import failed' };
     }
   });
@@ -95,7 +96,7 @@ export function registerDataTransferHandlers() {
       if (!PostmanImportService.isPostmanCollection(jsonData)) {
         return {
           success: false,
-          error: 'Invalid Postman collection. Please export as Collection v2.1 format.'
+          error: 'Invalid Postman collection. Please export as Collection v2.1 format.',
         };
       }
 
@@ -104,36 +105,39 @@ export function registerDataTransferHandlers() {
 
       return { success: true, data: newWorkspace };
     } catch (error) {
-      console.error('Postman import failed:', error);
+      LoggerService.error('Postman import failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Import failed' };
     }
   });
 
   // Import cURL Command
-  ipcMain.handle(IPC_CHANNELS.IMPORT_CURL, async (_event, curlCommand: string, parentId: string) => {
-    try {
-      // 1. Parse cURL command
-      const parsed = CurlImportService.parse(curlCommand);
+  ipcMain.handle(
+    IPC_CHANNELS.IMPORT_CURL,
+    async (_event, curlCommand: string, parentId: string) => {
+      try {
+        // 1. Parse cURL command
+        const parsed = CurlParser.parse(curlCommand);
 
-      // 2. Generate request name from URL
-      const name = CurlImportService.generateRequestName(parsed.url);
+        // 2. Generate request name from URL
+        const name = CurlParser.generateRequestName(parsed.url);
 
-      // 3. Create request
-      const request = await createRequest({
-        name,
-        url: parsed.url,
-        method: parsed.method,
-        parentId,
-        sortOrder: 0,
-        headers: parsed.headers,
-        body: parsed.body,
-        authentication: parsed.authentication,
-      });
+        // 3. Create request
+        const request = await createRequest({
+          name,
+          url: parsed.url,
+          method: parsed.method,
+          parentId,
+          sortOrder: 0,
+          headers: parsed.headers,
+          body: parsed.body,
+          authentication: parsed.authentication,
+        });
 
-      return { success: true, data: request };
-    } catch (error) {
-      console.error('cURL import failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Import failed' };
+        return { success: true, data: request };
+      } catch (error) {
+        LoggerService.error('cURL import failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Import failed' };
+      }
     }
-  });
+  );
 }

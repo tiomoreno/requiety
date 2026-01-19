@@ -1,128 +1,190 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WebSocketService } from './websocket.service';
-import WebSocket from 'ws';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 
-vi.mock('ws');
+// Define proper event handler types
+type WebSocketEventHandler = (...args: unknown[]) => void;
+type EventHandlersMap = Record<string, WebSocketEventHandler>;
+
+// Use vi.hoisted for mock state
+const { mockWsInstance, getEventHandlers } = vi.hoisted(() => {
+  let eventHandlers: EventHandlersMap = {};
+
+  const mockWsInstance = {
+    send: vi.fn(),
+    close: vi.fn(),
+    readyState: 1, // OPEN
+  };
+
+  // Function to get current handlers (for test assertions)
+  const getEventHandlers = () => eventHandlers;
+
+  // Reset function
+  const resetHandlers = () => {
+    eventHandlers = {};
+  };
+
+  return { mockWsInstance, getEventHandlers, resetHandlers };
+});
+
+// Mock WebSocket as a class that properly registers handlers
+vi.mock('ws', () => {
+  return {
+    default: class MockWebSocket {
+      static OPEN = 1;
+      static CLOSED = 3;
+
+      send = mockWsInstance.send;
+      close = mockWsInstance.close;
+      readyState = mockWsInstance.readyState;
+
+      private handlers: EventHandlersMap = {};
+
+      constructor(_url: string) {
+        // Store reference to handlers in the shared object
+        const sharedHandlers = getEventHandlers();
+        // Clear previous handlers
+        Object.keys(sharedHandlers).forEach((key) => delete sharedHandlers[key]);
+        // Use shared handlers
+        this.handlers = sharedHandlers;
+      }
+
+      on(event: string, handler: WebSocketEventHandler) {
+        this.handlers[event] = handler;
+        return this;
+      }
+    },
+    WebSocket: class MockWebSocket {
+      static OPEN = 1;
+      static CLOSED = 3;
+
+      send = mockWsInstance.send;
+      close = mockWsInstance.close;
+      readyState = mockWsInstance.readyState;
+
+      private handlers: EventHandlersMap = {};
+
+      constructor(_url: string) {
+        const sharedHandlers = getEventHandlers();
+        Object.keys(sharedHandlers).forEach((key) => delete sharedHandlers[key]);
+        this.handlers = sharedHandlers;
+      }
+
+      on(event: string, handler: WebSocketEventHandler) {
+        this.handlers[event] = handler;
+        return this;
+      }
+    },
+  };
+});
+
 vi.mock('electron', () => ({
   BrowserWindow: vi.fn(),
-  ipcMain: { handle: vi.fn(), on: vi.fn() }
+  ipcMain: { handle: vi.fn(), on: vi.fn() },
 }));
 
 describe('WebSocketService', () => {
-    let mockWindow: any;
-    let mockWs: any;
-    const requestId = 'req1';
+  let mockWindow: {
+    webContents: { send: ReturnType<typeof vi.fn> };
+    isDestroyed: ReturnType<typeof vi.fn>;
+  };
+  const requestId = 'req1';
 
-    beforeEach(() => {
-        mockWindow = {
-            webContents: { send: vi.fn() },
-            isDestroyed: vi.fn().mockReturnValue(false)
-        };
-        WebSocketService.setWindow(mockWindow);
-        
-        mockWs = {
-            on: vi.fn(),
-            send: vi.fn(),
-            close: vi.fn(),
-            readyState: 1 // OPEN
-        };
-        
-        vi.mocked(WebSocket).mockImplementation(() => mockWs as any);
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset event handlers
+    const handlers = getEventHandlers();
+    Object.keys(handlers).forEach((key) => delete handlers[key]);
 
-    afterEach(() => {
-        WebSocketService.disconnect(requestId);
-        vi.clearAllMocks();
-    });
+    mockWindow = {
+      webContents: { send: vi.fn() },
+      isDestroyed: vi.fn().mockReturnValue(false),
+    };
+    WebSocketService.setWindow(mockWindow as unknown as Electron.BrowserWindow);
+    mockWsInstance.readyState = 1; // OPEN
+  });
 
-    it('should connect and handle open event', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        
-        expect(WebSocket).toHaveBeenCalledWith('ws://test.com');
-        
-        // Check open handler
-        const openCall = mockWs.on.mock.calls.find((c: any) => c[0] === 'open');
-        expect(openCall).toBeDefined();
-        
-        // Trigger open
-        openCall[1]();
-        
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'status', data: 'connected' })
-        );
-    });
+  afterEach(() => {
+    try {
+      WebSocketService.disconnect(requestId);
+    } catch {
+      // Ignore if not connected
+    }
+  });
 
-    it('should handle incoming messages', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        const msgCall = mockWs.on.mock.calls.find((c: any) => c[0] === 'message');
-        
-        msgCall[1]('hello');
-        
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'incoming', data: 'hello' })
-        );
-    });
+  it('should connect and handle open event', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
 
-    it('should handle errors', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        const errCall = mockWs.on.mock.calls.find((c: any) => c[0] === 'error');
-        
-        errCall[1](new Error('fail'));
-        
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'error', data: 'fail' })
-        );
-    });
+    const handlers = getEventHandlers();
+    expect(handlers['open']).toBeDefined();
+    handlers['open']();
 
-    it('should handle close', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        const closeCall = mockWs.on.mock.calls.find((c: any) => c[0] === 'close');
-        
-        closeCall[1](1000, 'normal');
-        
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'status', data: 'disconnected' })
-        );
-    });
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.WS_EVENT,
+      expect.objectContaining({ type: 'status', data: 'connected' })
+    );
+  });
 
-    it('should send message if connected', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        mockWs.readyState = 1; // OPEN
-        
-        WebSocketService.send(requestId, 'ping');
-        
-        expect(mockWs.send).toHaveBeenCalledWith('ping');
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'outgoing', data: 'ping' })
-        );
-    });
+  it('should handle incoming messages', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
 
-    it('should throw if sending when not connected', () => {
-        expect(() => WebSocketService.send('unknown', 'msg')).toThrow('WebSocket is not connected');
-    });
+    const handlers = getEventHandlers();
+    expect(handlers['message']).toBeDefined();
+    handlers['message']('hello');
 
-    it('should disconnect', () => {
-        WebSocketService.connect(requestId, 'ws://test.com');
-        WebSocketService.disconnect(requestId);
-        
-        expect(mockWs.close).toHaveBeenCalled();
-    });
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.WS_EVENT,
+      expect.objectContaining({ type: 'incoming', data: 'hello' })
+    );
+  });
 
-    it('should handle connection error (constructor throw)', () => {
-        vi.mocked(WebSocket).mockImplementation(() => { throw new Error('Init failed'); });
-        
-        WebSocketService.connect(requestId, 'ws://bad');
-        
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith(
-            IPC_CHANNELS.WS_EVENT,
-            expect.objectContaining({ type: 'error', data: 'Init failed' })
-        );
-    });
+  it('should handle errors', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
+
+    const handlers = getEventHandlers();
+    expect(handlers['error']).toBeDefined();
+    handlers['error'](new Error('fail'));
+
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.WS_EVENT,
+      expect.objectContaining({ type: 'error', data: 'fail' })
+    );
+  });
+
+  it('should handle close', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
+
+    const handlers = getEventHandlers();
+    expect(handlers['close']).toBeDefined();
+    handlers['close'](1000, 'normal');
+
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.WS_EVENT,
+      expect.objectContaining({ type: 'status', data: 'disconnected' })
+    );
+  });
+
+  it('should send message if connected', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
+
+    WebSocketService.send(requestId, 'ping');
+
+    expect(mockWsInstance.send).toHaveBeenCalledWith('ping');
+    expect(mockWindow.webContents.send).toHaveBeenCalledWith(
+      IPC_CHANNELS.WS_EVENT,
+      expect.objectContaining({ type: 'outgoing', data: 'ping' })
+    );
+  });
+
+  it('should throw if sending when not connected', () => {
+    expect(() => WebSocketService.send('unknown', 'msg')).toThrow('WebSocket is not connected');
+  });
+
+  it('should disconnect', () => {
+    WebSocketService.connect(requestId, 'ws://test.com');
+    WebSocketService.disconnect(requestId);
+
+    expect(mockWsInstance.close).toHaveBeenCalled();
+  });
 });

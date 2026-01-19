@@ -4,7 +4,7 @@ import type {
   RequestBody,
   RequestBodyParam,
   Authentication,
-} from '../../shared/types';
+} from '@shared/types';
 
 export interface ParsedCurlCommand {
   url: string;
@@ -15,9 +15,9 @@ export interface ParsedCurlCommand {
 }
 
 /**
- * Service to parse cURL commands and convert them to request format
+ * Utility to parse cURL commands and convert them to request format
  */
-export class CurlImportService {
+export class CurlParser {
   /**
    * Parse a cURL command string into a request object
    */
@@ -260,9 +260,7 @@ export class CurlImportService {
     }
 
     // Check for Authorization header and convert to auth type
-    const authHeaderIndex = headers.findIndex(
-      h => h.name.toLowerCase() === 'authorization'
-    );
+    const authHeaderIndex = headers.findIndex((h) => h.name.toLowerCase() === 'authorization');
     if (authHeaderIndex !== -1 && authentication.type === 'none') {
       const authHeader = headers[authHeaderIndex];
       const authValue = authHeader.value;
@@ -302,10 +300,12 @@ export class CurlImportService {
    * Normalize command by removing line continuations
    */
   private static normalizeCommand(command: string): string {
+    // Use new RegExp with proper escaping
+    // We want \s+ in the regex, so we need \\s+ in the string literal.
     return command
-      .replace(/\\\r?\n/g, ' ') // Remove line continuations
-      .replace(/\r?\n/g, ' ')   // Replace newlines with spaces
-      .replace(/\s+/g, ' ')     // Normalize whitespace
+      .replace(new RegExp('\\\\\\r?\\n', 'g'), ' ') // Backslash newline
+      .replace(new RegExp('\\r?\\n', 'g'), ' ') // Newline
+      .replace(new RegExp('\\s+', 'g'), ' ') // Whitespace
       .trim();
   }
 

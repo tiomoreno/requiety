@@ -1,10 +1,10 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { WorkspaceContext } from '../../contexts/WorkspaceContext';
+import React, { useState, useEffect } from 'react';
+import { useWorkspaces } from '../../hooks/useWorkspaces';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 
 export const SyncSettings = () => {
-  const { currentWorkspace } = useContext(WorkspaceContext);
+  const { activeWorkspace, updateWorkspace } = useWorkspaces();
   const [repoUrl, setRepoUrl] = useState('');
   const [branch, setBranch] = useState('');
   const [token, setToken] = useState('');
@@ -14,13 +14,13 @@ export const SyncSettings = () => {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    if (currentWorkspace) {
-      setRepoUrl(currentWorkspace.syncRepositoryUrl || '');
-      setBranch(currentWorkspace.syncBranch || 'main');
-      setToken(currentWorkspace.syncToken || '');
-      setDirectory(currentWorkspace.syncDirectory || '');
+    if (activeWorkspace) {
+      setRepoUrl(activeWorkspace.syncRepositoryUrl || '');
+      setBranch(activeWorkspace.syncBranch || 'main');
+      setToken(activeWorkspace.syncToken || '');
+      setDirectory(activeWorkspace.syncDirectory || '');
     }
-  }, [currentWorkspace]);
+  }, [activeWorkspace]);
 
   const handleSelectDirectory = async () => {
     const result = await window.api.sync.setDirectory();
@@ -30,7 +30,7 @@ export const SyncSettings = () => {
   };
 
   const handleSetupSync = async () => {
-    if (!currentWorkspace) return;
+    if (!activeWorkspace) return;
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -39,9 +39,19 @@ export const SyncSettings = () => {
       if (!directory || !repoUrl || !branch || !token) {
         throw new Error('All fields are required.');
       }
-      
+
+      // First, update the workspace entity in the DB with the sync config
+      await updateWorkspace(activeWorkspace._id, {
+        syncRepositoryUrl: repoUrl,
+        syncBranch: branch,
+        syncToken: token,
+        syncDirectory: directory,
+        syncAuthenticationType: 'pat',
+      });
+
+      // Then, attempt to clone/setup the repo
       const result = await window.api.sync.setup({
-        workspaceId: currentWorkspace._id,
+        workspaceId: activeWorkspace._id,
         url: repoUrl,
         branch,
         token,
@@ -50,9 +60,8 @@ export const SyncSettings = () => {
 
       if (result.success) {
         setSuccess('Git Sync setup successful! Your workspace has been updated.');
-        // Optionally, you might want to refresh the workspace context here
       } else {
-        throw new Error(result.error || 'An unknown error occurred.');
+        throw new Error(result.error || 'An unknown error occurred during setup.');
       }
     } catch (e: any) {
       setError(e.message);
@@ -61,25 +70,27 @@ export const SyncSettings = () => {
     }
   };
 
-  if (!currentWorkspace) {
+  if (!activeWorkspace) {
     return <p>Please select a workspace first.</p>;
   }
 
-  const isSetup = !!currentWorkspace.syncRepositoryUrl;
+  const isSetup = !!activeWorkspace.syncRepositoryUrl;
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Git Sync Configuration</h2>
-      
+
       {isSetup && (
         <div className="p-3 bg-green-100 text-green-800 rounded-md">
           <p>This workspace is configured to sync with:</p>
-          <p className="font-mono text-sm break-all">{currentWorkspace.syncRepositoryUrl}</p>
+          <p className="font-mono text-sm break-all">{activeWorkspace.syncRepositoryUrl}</p>
         </div>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="directory" className="block text-sm font-medium">Local Directory</label>
+        <label htmlFor="directory" className="block text-sm font-medium">
+          Local Directory
+        </label>
         <div className="flex items-center space-x-2">
           <Input
             id="directory"
@@ -96,7 +107,9 @@ export const SyncSettings = () => {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="repoUrl" className="block text-sm font-medium">Repository URL</label>
+        <label htmlFor="repoUrl" className="block text-sm font-medium">
+          Repository URL
+        </label>
         <Input
           id="repoUrl"
           type="text"
@@ -108,7 +121,9 @@ export const SyncSettings = () => {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="branch" className="block text-sm font-medium">Branch</label>
+        <label htmlFor="branch" className="block text-sm font-medium">
+          Branch
+        </label>
         <Input
           id="branch"
           type="text"
@@ -120,7 +135,9 @@ export const SyncSettings = () => {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="token" className="block text-sm font-medium">Personal Access Token (PAT)</label>
+        <label htmlFor="token" className="block text-sm font-medium">
+          Personal Access Token (PAT)
+        </label>
         <Input
           id="token"
           type="password"
@@ -138,7 +155,7 @@ export const SyncSettings = () => {
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && <p className="text-sm text-green-600">{success}</p>}
         <Button onClick={handleSetupSync} disabled={isLoading}>
-          {isLoading ? 'Saving...' : (isSetup ? 'Update Configuration' : 'Save and Setup')}
+          {isLoading ? 'Saving...' : isSetup ? 'Update Configuration' : 'Save and Setup'}
         </Button>
       </div>
     </div>

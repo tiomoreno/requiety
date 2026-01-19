@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OAuthService } from './oauth.service';
-import type { OAuth2Config, OAuth2Token } from '../../shared/types';
+import type { OAuth2Config, OAuth2Token } from '@shared/types';
 
 // Mock dependencies
 vi.mock('electron', () => ({
@@ -114,8 +114,9 @@ describe('OAuthService', () => {
         text: async () => 'Invalid grant',
       });
 
-      await expect(OAuthService.exchangeCodeForToken(mockConfig, 'invalid-code'))
-        .rejects.toThrow('Token exchange failed: 400 Invalid grant');
+      await expect(OAuthService.exchangeCodeForToken(mockConfig, 'invalid-code')).rejects.toThrow(
+        'Token exchange failed: 400 Invalid grant'
+      );
     });
 
     it('should throw error when access_token is missing', async () => {
@@ -124,8 +125,9 @@ describe('OAuthService', () => {
         json: async () => ({ token_type: 'Bearer' }), // No access_token
       });
 
-      await expect(OAuthService.exchangeCodeForToken(mockConfig, 'auth-code'))
-        .rejects.toThrow('No access_token in response');
+      await expect(OAuthService.exchangeCodeForToken(mockConfig, 'auth-code')).rejects.toThrow(
+        'No access_token in response'
+      );
     });
   });
 
@@ -163,8 +165,9 @@ describe('OAuthService', () => {
         text: async () => 'Invalid client',
       });
 
-      await expect(OAuthService.clientCredentialsGrant(mockConfig, 'req_1'))
-        .rejects.toThrow('Client credentials grant failed: 401 Invalid client');
+      await expect(OAuthService.clientCredentialsGrant(mockConfig, 'req_1')).rejects.toThrow(
+        'Client credentials grant failed: 401 Invalid client'
+      );
     });
   });
 
@@ -197,15 +200,17 @@ describe('OAuthService', () => {
     it('should throw error when username is missing', async () => {
       const configNoUser: OAuth2Config = { ...mockConfig, grantType: 'password' };
 
-      await expect(OAuthService.passwordGrant(configNoUser, 'req_1'))
-        .rejects.toThrow('Username and password required for password grant');
+      await expect(OAuthService.passwordGrant(configNoUser, 'req_1')).rejects.toThrow(
+        'Username and password required for password grant'
+      );
     });
 
     it('should throw error when password is missing', async () => {
       const configNoPass: OAuth2Config = { ...mockConfig, grantType: 'password', username: 'user' };
 
-      await expect(OAuthService.passwordGrant(configNoPass, 'req_1'))
-        .rejects.toThrow('Username and password required for password grant');
+      await expect(OAuthService.passwordGrant(configNoPass, 'req_1')).rejects.toThrow(
+        'Username and password required for password grant'
+      );
     });
   });
 
@@ -245,8 +250,9 @@ describe('OAuthService', () => {
         text: async () => 'Invalid refresh token',
       });
 
-      await expect(OAuthService.refreshToken(mockConfig, 'invalid-token', 'req_1'))
-        .rejects.toThrow('Token refresh failed: 400 Invalid refresh token');
+      await expect(OAuthService.refreshToken(mockConfig, 'invalid-token', 'req_1')).rejects.toThrow(
+        'Token refresh failed: 400 Invalid refresh token'
+      );
     });
   });
 

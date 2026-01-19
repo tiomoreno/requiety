@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import * as ReactWindow from 'react-window';
+import * as ReactWindowModule from 'react-window';
+import type { ListChildComponentProps } from 'react-window';
 import { VirtualTreeItem } from './VirtualTreeItem';
 import { useData } from '../../hooks/useData';
 import { flattenTree } from '../../utils/tree-builder';
 import type { FlatTreeItem } from '../../utils/tree-builder';
-import type { WorkspaceTreeItem } from '../../../shared/types';
+import type { WorkspaceTreeItem } from '@shared/types';
+
+// Workaround for Vite/CJS interop issues with react-window
+/* eslint-disable import/namespace, @typescript-eslint/no-explicit-any */
+const FixedSizeList =
+  ReactWindowModule.FixedSizeList || (ReactWindowModule as any).default?.FixedSizeList;
+/* eslint-enable import/namespace, @typescript-eslint/no-explicit-any */
 
 interface TreeViewProps {
   items?: WorkspaceTreeItem[];
@@ -30,7 +37,7 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
     // Initially expand all folders
     const ids = new Set<string>();
     const collectFolderIds = (items: WorkspaceTreeItem[]) => {
-      items.forEach(item => {
+      items.forEach((item) => {
         if (item.type === 'folder') {
           ids.add(item.id);
           if (item.children) {
@@ -48,7 +55,7 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
     if (forceExpand) {
       const ids = new Set<string>();
       const collectFolderIds = (items: WorkspaceTreeItem[]) => {
-        items.forEach(item => {
+        items.forEach((item) => {
           if (item.type === 'folder') {
             ids.add(item.id);
             if (item.children) {
@@ -81,14 +88,17 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
     [displayItems, expandedIds]
   );
 
-  const handleSelect = useCallback((item: WorkspaceTreeItem) => {
-    if (item.type === 'request' && item.data && 'method' in item.data) {
-      setSelectedRequest(item.data);
-    }
-  }, [setSelectedRequest]);
+  const handleSelect = useCallback(
+    (item: WorkspaceTreeItem) => {
+      if (item.type === 'request' && item.data && 'method' in item.data) {
+        setSelectedRequest(item.data);
+      }
+    },
+    [setSelectedRequest]
+  );
 
   const toggleExpand = useCallback((id: string) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -111,7 +121,7 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
   const useVirtualization = flatItems.length > VIRTUALIZATION_THRESHOLD;
 
   if (useVirtualization) {
-    const Row = ({ index, style }: ReactWindow.ListChildComponentProps) => {
+    const Row = ({ index, style }: ListChildComponentProps) => {
       const flatItem = flatItems[index];
       return (
         <div style={style}>
@@ -130,14 +140,14 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
 
     return (
       <div ref={containerRef} className="h-full px-2 py-2">
-        <ReactWindow.FixedSizeList
+        <FixedSizeList
           height={containerHeight - 16}
           itemCount={flatItems.length}
           itemSize={ITEM_HEIGHT}
           width="100%"
         >
           {Row}
-        </ReactWindow.FixedSizeList>
+        </FixedSizeList>
       </div>
     );
   }
@@ -160,4 +170,3 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
     </div>
   );
 };
-

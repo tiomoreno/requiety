@@ -1,4 +1,11 @@
-import type { Request, Response, ApiResponse, HttpMethod, RequestBody, Authentication } from '../../shared/types';
+import type {
+  Request,
+  Response,
+  ApiResponse,
+  HttpMethod,
+  RequestBody,
+  Authentication,
+} from '@shared/types';
 
 /**
  * Request service - wrapper around window.api.request
@@ -49,15 +56,18 @@ export const requestService = {
   /**
    * Update request
    */
-  async update(id: string, data: Partial<{
-    name: string;
-    url: string;
-    method: HttpMethod;
-    sortOrder: number;
-    headers: Array<{ name: string; value: string; enabled: boolean }>;
-    body: RequestBody;
-    authentication: Authentication;
-  }>): Promise<Request> {
+  async update(
+    id: string,
+    data: Partial<{
+      name: string;
+      url: string;
+      method: HttpMethod;
+      sortOrder: number;
+      headers: Array<{ name: string; value: string; enabled: boolean }>;
+      body: RequestBody;
+      authentication: Authentication;
+    }>
+  ): Promise<Request> {
     const result = await window.api.request.update(id, data);
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to update request');

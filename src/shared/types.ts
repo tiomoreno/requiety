@@ -12,6 +12,7 @@ export type DocumentType =
   | 'Environment'
   | 'Variable'
   | 'Settings'
+  | 'MockRoute'
   | 'OAuth2Token';
 
 export interface BaseDocument {
@@ -51,7 +52,16 @@ export interface Folder extends BaseDocument {
 // Request
 // ============================================================================
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS' | 'WS' | 'GRPC';
+export type HttpMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'WS'
+  | 'GRPC';
 
 export interface WebSocketMessage {
   id: string;
@@ -60,7 +70,14 @@ export interface WebSocketMessage {
   timestamp: number;
 }
 
-export type BodyType = 'none' | 'json' | 'form-urlencoded' | 'form-data' | 'raw' | 'graphql' | 'grpc';
+export type BodyType =
+  | 'none'
+  | 'json'
+  | 'form-urlencoded'
+  | 'form-data'
+  | 'raw'
+  | 'graphql'
+  | 'grpc';
 
 export type AuthType = 'none' | 'basic' | 'bearer' | 'oauth2';
 
@@ -103,8 +120,8 @@ export interface RequestBodyParam {
   name: string;
   value: string;
   enabled: boolean;
-  type?: 'text' | 'file';  // For form-data file uploads
-  filePath?: string;        // File path when type is 'file'
+  type?: 'text' | 'file'; // For form-data file uploads
+  filePath?: string; // File path when type is 'file'
 }
 
 export interface RequestBody {
@@ -198,17 +215,17 @@ export interface Variable extends BaseDocument {
 export interface Settings extends BaseDocument {
   _id: 'settings';
   type: 'Settings';
-  
+
   // HTTP Settings
   timeout: number; // request timeout in ms
   followRedirects: boolean;
   validateSSL: boolean;
   maxRedirects: number;
-  
+
   // UI Settings
   theme: 'light' | 'dark' | 'auto';
   fontSize: number;
-  
+
   // Storage
   maxHistoryResponses: number; // keep last N responses
 }
@@ -250,16 +267,22 @@ export interface TemplateRenderResult {
 // Assertions & Testing
 // ============================================================================
 
+export type JSONValue = string | number | boolean | null | JSONObject | JSONArray;
+export interface JSONObject {
+  [key: string]: JSONValue;
+}
+export type JSONArray = JSONValue[];
+
 export type AssertionSource = 'status' | 'header' | 'jsonBody' | 'responseTime';
 
-export type AssertionOperator = 
-  | 'equals' 
-  | 'notEquals' 
-  | 'contains' 
-  | 'notContains' 
-  | 'greaterThan' 
-  | 'lessThan' 
-  | 'exists' 
+export type AssertionOperator =
+  | 'equals'
+  | 'notEquals'
+  | 'contains'
+  | 'notContains'
+  | 'greaterThan'
+  | 'lessThan'
+  | 'exists'
   | 'notExists'
   | 'isNull'
   | 'isNotNull';
@@ -277,8 +300,8 @@ export interface AssertionResult {
   assertionId: string;
   status: 'pass' | 'fail';
   error?: string; // processing error
-  actualValue?: any;
-  expectedValue?: any;
+  actualValue?: JSONValue | undefined;
+  expectedValue?: JSONValue | undefined;
 }
 
 export interface TestResult {
@@ -317,4 +340,19 @@ export interface CollectionRunResult {
     duration: number;
     assertionResults?: TestResult;
   }[];
+}
+
+// ============================================================================
+// Mock Server
+// ============================================================================
+
+export interface MockRoute extends BaseDocument {
+  type: 'MockRoute';
+  workspaceId: string;
+  name: string;
+  method: HttpMethod;
+  path: string;
+  statusCode: number;
+  body: string;
+  enabled: boolean;
 }

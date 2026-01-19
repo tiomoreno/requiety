@@ -8,7 +8,14 @@
       "Bash(grep:*)",
       "Bash(npx vitest:*)",
       "Bash(npm install:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm ls:*)",
+      "Bash(wc:*)",
+      "Bash(npm run format:check:*)",
+      "Bash(npm run package:*)",
+      "Bash(timeout 15 npm start)",
+      "Bash(git add:*)"
     ]
   }
 }

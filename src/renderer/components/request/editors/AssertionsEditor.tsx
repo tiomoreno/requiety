@@ -1,6 +1,6 @@
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { Assertion, AssertionSource, AssertionOperator } from '../../../shared/types';
+import type { Assertion, AssertionSource, AssertionOperator } from '@shared/types';
 import { Button } from '../../common/Button';
 import { Input } from '../../common/Input';
 import { FaTrash } from 'react-icons/fa';
@@ -13,8 +13,16 @@ interface AssertionsEditorProps {
 
 const assertionSources: AssertionSource[] = ['status', 'header', 'jsonBody', 'responseTime'];
 const assertionOperators: AssertionOperator[] = [
-  'equals', 'notEquals', 'contains', 'notContains', 'greaterThan', 'lessThan',
-  'exists', 'notExists', 'isNull', 'isNotNull'
+  'equals',
+  'notEquals',
+  'contains',
+  'notContains',
+  'greaterThan',
+  'lessThan',
+  'exists',
+  'notExists',
+  'isNull',
+  'isNotNull',
 ];
 
 export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, onChange }) => {
@@ -30,14 +38,14 @@ export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, 
   };
 
   const handleUpdateAssertion = (id: string, updatedAssertion: Partial<Assertion>) => {
-    const updatedAssertions = assertions.map(a =>
+    const updatedAssertions = assertions.map((a) =>
       a.id === id ? { ...a, ...updatedAssertion } : a
     );
     onChange(updatedAssertions);
   };
 
   const handleDeleteAssertion = (id: string) => {
-    const updatedAssertions = assertions.filter(a => a.id !== id);
+    const updatedAssertions = assertions.filter((a) => a.id !== id);
     onChange(updatedAssertions);
   };
 
@@ -59,9 +67,15 @@ export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, 
             />
             <select
               value={assertion.source}
-              onChange={(e) => handleUpdateAssertion(assertion.id, { source: e.target.value as AssertionSource })}
+              onChange={(e) =>
+                handleUpdateAssertion(assertion.id, { source: e.target.value as AssertionSource })
+              }
             >
-              {assertionSources.map(s => <option key={s} value={s}>{s}</option>)}
+              {assertionSources.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
             {['header', 'jsonBody'].includes(assertion.source) && (
               <Input
@@ -72,9 +86,17 @@ export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, 
             )}
             <select
               value={assertion.operator}
-              onChange={(e) => handleUpdateAssertion(assertion.id, { operator: e.target.value as AssertionOperator })}
+              onChange={(e) =>
+                handleUpdateAssertion(assertion.id, {
+                  operator: e.target.value as AssertionOperator,
+                })
+              }
             >
-              {assertionOperators.map(o => <option key={o} value={o}>{o}</option>)}
+              {assertionOperators.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
             </select>
             <Input
               placeholder="Expected Value"
@@ -87,9 +109,7 @@ export const AssertionsEditor: React.FC<AssertionsEditorProps> = ({ assertions, 
           </div>
         ))}
         {assertions.length === 0 && (
-          <div className="empty-state">
-            No assertions defined. Add one to get started.
-          </div>
+          <div className="empty-state">No assertions defined. Add one to get started.</div>
         )}
       </div>
     </div>

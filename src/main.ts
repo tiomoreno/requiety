@@ -18,7 +18,9 @@ import { registerGrpcHandlers } from './main/ipc/grpc';
 import { registerSyncHandlers } from './main/ipc/sync';
 import { registerWebSocketHandlers } from './main/ipc/websocket';
 import { registerOAuthHandlers } from './main/ipc/oauth';
+import { registerMockHandlers } from './main/ipc/mock';
 import { WebSocketService } from './main/services/websocket.service';
+import { LoggerService } from './main/services/logger.service';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -46,9 +48,7 @@ const createWindow = () => {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   // Open the DevTools.
@@ -58,20 +58,20 @@ const createWindow = () => {
 // Initialize application
 const initializeApp = async () => {
   try {
-    console.log('Initializing application...');
-    
+    LoggerService.info('Initializing application...');
+
     // Create application directories
     await initializeDirectories();
-    console.log('Application directories created');
-    
+    LoggerService.debug('Application directories created');
+
     // Initialize database
     await initializeDatabase();
-    console.log('Database initialized');
-    
+    LoggerService.debug('Database initialized');
+
     // Run migrations
     await runMigrations();
-    console.log('Migrations completed');
-    
+    LoggerService.debug('Migrations completed');
+
     // Register IPC handlers
     registerWorkspaceHandlers();
     registerFolderHandlers();
@@ -87,11 +87,12 @@ const initializeApp = async () => {
     registerSyncHandlers();
     registerWebSocketHandlers();
     registerOAuthHandlers();
-    console.log('IPC handlers registered');
-    
-    console.log('Application initialized successfully');
+    registerMockHandlers();
+    LoggerService.debug('IPC handlers registered');
+
+    LoggerService.info('Application initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize application:', error);
+    LoggerService.error('Failed to initialize application:', error);
     app.quit();
   }
 };

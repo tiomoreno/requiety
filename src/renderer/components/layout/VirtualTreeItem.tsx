@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { WorkspaceTreeItem } from '../../../shared/types';
+import type { WorkspaceTreeItem } from '@shared/types';
 import type { FlatTreeItem } from '../../utils/tree-builder';
 import { ContextMenu } from '../common/ContextMenu';
+import { logger } from '../../utils/logger';
 
 interface VirtualTreeItemProps {
   flatItem: FlatTreeItem;
@@ -106,7 +107,7 @@ export const VirtualTreeItem = ({
           onMove(data.id, item.id);
         }
       } catch (err) {
-        console.error('Invalid drag data', err);
+        logger.error('Invalid drag data', err);
       }
     }
   };
@@ -163,12 +164,7 @@ export const VirtualTreeItem = ({
               onToggleExpand(item.id);
             }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         )}
 
@@ -216,7 +212,11 @@ export const VirtualTreeItem = ({
             title="Run Folder"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
         )}
@@ -233,7 +233,11 @@ export const VirtualTreeItem = ({
               onClick: () => onRun && onRun(item.id, item.name, 'folder'),
               icon: (
                 <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ),
             },

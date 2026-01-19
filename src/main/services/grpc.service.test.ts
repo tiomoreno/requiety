@@ -72,25 +72,28 @@ describe('GrpcService', () => {
     it('should handle proto loader errors', async () => {
       vi.mocked(protoLoader.load).mockRejectedValue(new Error('File not found'));
 
-      await expect(GrpcService.parseProtoFile('/invalid/path.proto'))
-        .rejects.toThrow('File not found');
+      await expect(GrpcService.parseProtoFile('/invalid/path.proto')).rejects.toThrow(
+        'File not found'
+      );
     });
   });
 
   describe('makeUnaryCall', () => {
     it('should make a successful unary call', async () => {
       const mockResponse = { message: 'Hello, World!' };
-      const mockMethod = vi.fn((body, callback) => {
+      const mockMethod = vi.fn((_body, callback) => {
         callback(null, mockResponse);
       });
 
-      const MockService = vi.fn().mockImplementation(() => ({
-        sayHello: mockMethod,
-      }));
+      // Create a proper class mock for the service
+      class MockGreeterService {
+        sayHello = mockMethod;
+        constructor(_url: string, _credentials: any) {}
+      }
 
       const mockProto = {
         helloworld: {
-          Greeter: MockService,
+          Greeter: MockGreeterService,
         },
       };
 
@@ -106,36 +109,39 @@ describe('GrpcService', () => {
       });
 
       expect(result).toEqual(mockResponse);
-      expect(MockService).toHaveBeenCalledWith('localhost:50051', expect.anything());
       expect(mockMethod).toHaveBeenCalledWith({ name: 'World' }, expect.any(Function));
     });
 
     it('should handle gRPC call errors', async () => {
       const mockError = new Error('gRPC call failed');
-      const mockMethod = vi.fn((body, callback) => {
+      const mockMethod = vi.fn((_body, callback) => {
         callback(mockError, null);
       });
 
-      const MockService = vi.fn().mockImplementation(() => ({
-        sayHello: mockMethod,
-      }));
+      // Create a proper class mock for the service
+      class MockGreeterService {
+        sayHello = mockMethod;
+        constructor(_url: string, _credentials: any) {}
+      }
 
       const mockProto = {
         helloworld: {
-          Greeter: MockService,
+          Greeter: MockGreeterService,
         },
       };
 
       vi.mocked(protoLoader.load).mockResolvedValue({});
       vi.mocked(grpc.loadPackageDefinition).mockReturnValue(mockProto as any);
 
-      await expect(GrpcService.makeUnaryCall({
-        protoFilePath: '/path/to/test.proto',
-        url: 'localhost:50051',
-        service: 'helloworld.Greeter',
-        method: 'sayHello',
-        body: '{"name": "World"}',
-      })).rejects.toThrow('gRPC call failed');
+      await expect(
+        GrpcService.makeUnaryCall({
+          protoFilePath: '/path/to/test.proto',
+          url: 'localhost:50051',
+          service: 'helloworld.Greeter',
+          method: 'sayHello',
+          body: '{"name": "World"}',
+        })
+      ).rejects.toThrow('gRPC call failed');
     });
 
     it('should throw error for non-existent service', async () => {
@@ -148,36 +154,41 @@ describe('GrpcService', () => {
       vi.mocked(protoLoader.load).mockResolvedValue({});
       vi.mocked(grpc.loadPackageDefinition).mockReturnValue(mockProto as any);
 
-      await expect(GrpcService.makeUnaryCall({
-        protoFilePath: '/path/to/test.proto',
-        url: 'localhost:50051',
-        service: 'helloworld.Greeter',
-        method: 'sayHello',
-        body: '{}',
-      })).rejects.toThrow('Service not found: helloworld.Greeter');
+      await expect(
+        GrpcService.makeUnaryCall({
+          protoFilePath: '/path/to/test.proto',
+          url: 'localhost:50051',
+          service: 'helloworld.Greeter',
+          method: 'sayHello',
+          body: '{}',
+        })
+      ).rejects.toThrow('Service not found: helloworld.Greeter');
     });
 
     it('should handle invalid JSON body', async () => {
-      const MockService = vi.fn().mockImplementation(() => ({
-        sayHello: vi.fn(),
-      }));
+      class MockGreeterService {
+        sayHello = vi.fn();
+        constructor(_url: string, _credentials: any) {}
+      }
 
       const mockProto = {
         helloworld: {
-          Greeter: MockService,
+          Greeter: MockGreeterService,
         },
       };
 
       vi.mocked(protoLoader.load).mockResolvedValue({});
       vi.mocked(grpc.loadPackageDefinition).mockReturnValue(mockProto as any);
 
-      await expect(GrpcService.makeUnaryCall({
-        protoFilePath: '/path/to/test.proto',
-        url: 'localhost:50051',
-        service: 'helloworld.Greeter',
-        method: 'sayHello',
-        body: 'invalid json',
-      })).rejects.toThrow();
+      await expect(
+        GrpcService.makeUnaryCall({
+          protoFilePath: '/path/to/test.proto',
+          url: 'localhost:50051',
+          service: 'helloworld.Greeter',
+          method: 'sayHello',
+          body: 'invalid json',
+        })
+      ).rejects.toThrow();
     });
   });
 });

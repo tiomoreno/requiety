@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ID_PREFIXES } from '../../shared/constants';
-import type { DocumentType } from '../../shared/types';
+import { ID_PREFIXES } from '@shared/constants';
+import type { DocumentType } from '@shared/types';
 
 /**
  * Generate a unique ID with the appropriate prefix for the document type
  */
 export const generateId = (type: DocumentType): string => {
   const uuid = uuidv4();
-  
+
   switch (type) {
     case 'Workspace':
       return `${ID_PREFIXES.WORKSPACE}${uuid}`;
@@ -23,6 +23,10 @@ export const generateId = (type: DocumentType): string => {
       return `${ID_PREFIXES.VARIABLE}${uuid}`;
     case 'Settings':
       return 'settings'; // Settings has a fixed ID
+    case 'MockRoute':
+      return `${ID_PREFIXES.MOCK_ROUTE}${uuid}`;
+    case 'OAuth2Token':
+      return `${ID_PREFIXES.OAUTH2_TOKEN}${uuid}`;
     default:
       throw new Error(`Unknown document type: ${type}`);
   }

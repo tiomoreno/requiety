@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { OAuth2Config, OAuth2GrantType, OAuth2Token } from '../../../../shared/types';
+import type { OAuth2Config, OAuth2GrantType, OAuth2Token } from '@shared/types';
 import { FaSync, FaTrash } from 'react-icons/fa';
 
 interface OAuthEditorProps {
@@ -9,10 +9,22 @@ interface OAuthEditorProps {
 }
 
 const grantTypes: { value: OAuth2GrantType; label: string; description: string }[] = [
-  { value: 'authorization_code', label: 'Authorization Code', description: 'Most secure flow, requires user interaction' },
-  { value: 'client_credentials', label: 'Client Credentials', description: 'For server-to-server authentication' },
+  {
+    value: 'authorization_code',
+    label: 'Authorization Code',
+    description: 'Most secure flow, requires user interaction',
+  },
+  {
+    value: 'client_credentials',
+    label: 'Client Credentials',
+    description: 'For server-to-server authentication',
+  },
   { value: 'password', label: 'Password', description: 'Direct username/password (legacy)' },
-  { value: 'implicit', label: 'Implicit', description: 'Deprecated, use Auth Code with PKCE instead' },
+  {
+    value: 'implicit',
+    label: 'Implicit',
+    description: 'Deprecated, use Auth Code with PKCE instead',
+  },
 ];
 
 export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
@@ -99,7 +111,11 @@ export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
   };
 
   const isTokenExpired = token?.expiresAt && Date.now() >= token.expiresAt;
-  const buttonText = token ? (token.refreshToken ? 'Get / Refresh Token' : 'Get New Token') : 'Get New Token';
+  const buttonText = token
+    ? token.refreshToken
+      ? 'Get / Refresh Token'
+      : 'Get New Token'
+    : 'Get New Token';
 
   return (
     <div className="p-4 space-y-4 overflow-auto">
@@ -200,9 +216,7 @@ export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
 
       {/* Scope */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Scope
-        </label>
+        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Scope</label>
         <input
           type="text"
           value={config.scope || ''}
@@ -267,11 +281,13 @@ export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
 
       {/* Token Status */}
       {token && (
-        <div className={`p-3 border rounded ${
-          isTokenExpired
-            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-            : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-        }`}>
+        <div
+          className={`p-3 border rounded ${
+            isTokenExpired
+              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+          }`}
+        >
           <div className="flex items-center gap-2 mb-2">
             <FaCheck className={isTokenExpired ? 'text-yellow-600' : 'text-green-600'} />
             <span className="text-sm font-medium">
@@ -280,11 +296,7 @@ export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
           </div>
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
             <p>Type: {token.tokenType}</p>
-            {token.expiresAt && (
-              <p>
-                Expires: {new Date(token.expiresAt).toLocaleString()}
-              </p>
-            )}
+            {token.expiresAt && <p>Expires: {new Date(token.expiresAt).toLocaleString()}</p>}
             {token.scope && <p>Scope: {token.scope}</p>}
           </div>
         </div>
@@ -297,11 +309,7 @@ export function OAuthEditor({ config, onChange, requestId }: OAuthEditorProps) {
           disabled={loading || !config.tokenUrl || !config.clientId}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white rounded text-sm transition-colors"
         >
-          {loading ? (
-            <span className="animate-spin">&#9696;</span>
-          ) : (
-            <FaSync className="w-3 h-3" />
-          )}
+          {loading ? <span className="animate-spin">&#9696;</span> : <FaSync className="w-3 h-3" />}
           {buttonText}
         </button>
 

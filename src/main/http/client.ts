@@ -1,10 +1,11 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse, type Method } from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse, type Method, AxiosError } from 'axios';
 import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import FormData from 'form-data';
-import type { Request, Response } from '../../shared/types';
+import type { Request, Response } from '@shared/types';
+import { LoggerService } from '../services/logger.service';
 
 /**
  * Service to handle HTTP requests
@@ -31,7 +32,7 @@ export class HttpService {
   async sendRequest(request: Request): Promise<Response> {
     const startTime = Date.now();
     let response: AxiosResponse | null = null;
-    let error: any = null;
+    let error: Error | AxiosError | null = null;
 
     try {
       const headers = this.prepareHeaders(request);
@@ -54,24 +55,26 @@ export class HttpService {
           rejectUnauthorized: this.options.validateSSL ?? true,
         }),
         // Redirect handling
-        maxRedirects: this.options.followRedirects !== false
-          ? (this.options.maxRedirects ?? 5)
-          : 0,
+        maxRedirects: this.options.followRedirects !== false ? (this.options.maxRedirects ?? 5) : 0,
       };
 
       // Add auth
       this.addAuthentication(config, request);
 
       response = await axios(config);
-    } catch (err: any) {
-      error = err;
+    } catch (err) {
+      if (err instanceof Error || axios.isAxiosError(err)) {
+        error = err;
+      } else {
+        error = new Error(String(err));
+      }
     }
 
     const endTime = Date.now();
     const elapsedTime = endTime - startTime;
 
     if (error) {
-       // Network error or timeout (axios throws for these even with validateStatus: true)
+      // Network error or timeout (axios throws for these even with validateStatus: true)
       return {
         _id: uuidv4(),
         type: 'Response',
@@ -83,7 +86,7 @@ export class HttpService {
         bodyPath: '', // We'll handle file storage later if needed
         elapsedTime,
         created: Date.now(),
-        modified: Date.now(), 
+        modified: Date.now(),
       };
     }
 
@@ -98,9 +101,8 @@ export class HttpService {
     }));
 
     // Prepare response body string
-    const bodyStr = typeof response.data === 'string' 
-      ? response.data 
-      : JSON.stringify(response.data);
+    const bodyStr =
+      typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
     return {
       _id: uuidv4(),
       type: 'Response',
@@ -109,7 +111,7 @@ export class HttpService {
       statusMessage: response.statusText,
       headers,
       body: bodyStr,
-      bodyPath: '', 
+      bodyPath: '',
       elapsedTime,
       created: Date.now(),
       modified: Date.now(),
@@ -121,13 +123,13 @@ export class HttpService {
    */
   private prepareHeaders(request: Request): Record<string, string> {
     const headers: Record<string, string> = {};
-    
+
     // Default headers
     headers['User-Agent'] = 'Requiety/1.0.0';
 
     // User headers
     if (request.headers) {
-      request.headers.forEach(h => {
+      request.headers.forEach((h) => {
         if (h.enabled && h.name) {
           headers[h.name] = h.value;
         }
@@ -140,7 +142,7 @@ export class HttpService {
   /**
    * Prepare body based on content type
    */
-  private prepareBody(request: Request): { data?: any; contentType?: string } {
+  private prepareBody(request: Request): { data?: string | FormData; contentType?: string } {
     if (!request.body || request.body.type === 'none') return {};
 
     switch (request.body.type) {
@@ -178,7 +180,7 @@ export class HttpService {
                 filename: fileName,
               });
             } catch (error) {
-              console.warn(`Failed to read file: ${param.filePath}`, error);
+              LoggerService.warn(`Failed to read file: ${param.filePath}`, error);
             }
           } else {
             // Regular text field
@@ -200,7 +202,7 @@ export class HttpService {
             variables = JSON.parse(request.body.graphql.variables);
           }
         } catch (e) {
-          console.warn('Invalid GraphQL variables JSON', e);
+          LoggerService.warn('Invalid GraphQL variables JSON', e);
         }
         return {
           data: JSON.stringify({ query, variables }),

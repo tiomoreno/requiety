@@ -63,16 +63,16 @@ export const IPC_CHANNELS = {
   RESPONSE_RECEIVED: 'event:response-received',
   REQUEST_SENT: 'event:request-sent',
   ERROR: 'event:error',
-  
+
   // Runner
   RUNNER_START: 'runner:start',
   RUNNER_STOP: 'runner:stop',
   RUNNER_ON_PROGRESS: 'runner:on-progress',
   RUNNER_ON_COMPLETE: 'runner:on-complete',
-  
+
   // GraphQL
   GRAPHQL_INTROSPECT: 'graphql:introspect',
-  
+
   // gRPC
   GRPC_SELECT_PROTO_FILE: 'grpc:selectProtoFile',
   GRPC_PARSE_PROTO: 'grpc:parseProto',
@@ -99,7 +99,17 @@ export const IPC_CHANNELS = {
   OAUTH_CLEAR_TOKEN: 'oauth:clearToken',
   OAUTH_CLIENT_CREDENTIALS: 'oauth:clientCredentials',
   OAUTH_PASSWORD_GRANT: 'oauth:passwordGrant',
+
+  // Mock Server
+  MOCK_SERVER_START: 'mock:server:start',
+  MOCK_SERVER_STOP: 'mock:server:stop',
+  MOCK_SERVER_GET_STATUS: 'mock:server:getStatus',
+  MOCK_SERVER_GET_LOGS: 'mock:server:getLogs',
+  MOCK_SERVER_CLEAR_LOGS: 'mock:server:clearLogs',
+  MOCK_ROUTE_CREATE: 'mock:route:create',
+  MOCK_ROUTE_GET_BY_WORKSPACE: 'mock:route:getByWorkspace',
+  MOCK_ROUTE_UPDATE: 'mock:route:update',
+  MOCK_ROUTE_DELETE: 'mock:route:delete',
 } as const;
 
-
-export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
+export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];

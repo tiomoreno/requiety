@@ -1,4 +1,4 @@
-import type { HttpMethod, Request } from '../../../shared/types';
+import type { HttpMethod, Request } from '@shared/types';
 
 interface RequestUrlBarProps {
   request: Request;

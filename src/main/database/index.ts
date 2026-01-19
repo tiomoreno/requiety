@@ -1,26 +1,39 @@
+import { LoggerService } from '../services/logger.service';
+
+LoggerService.info('[DB] Loading database module...');
+
 import Datastore from '@seald-io/nedb';
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import type {
-  Workspace,
-  Folder,
-  Request,
-  Response,
-  Environment,
-  Variable,
-  Settings,
-  DocumentType,
-} from '../../shared/types';
+import type { DocumentType } from '@shared/types';
 
-// Database instances
-let workspaceDb: Datastore<Workspace>;
-let folderDb: Datastore<Folder>;
-let requestDb: Datastore<Request>;
-let responseDb: Datastore<Response>;
-let environmentDb: Datastore<Environment>;
-let variableDb: Datastore<Variable>;
-let settingsDb: Datastore<Settings>;
+// Use a Map to store database instances for robustness
+const dbs = new Map<DocumentType, Datastore<Record<string, unknown>>>();
+
+const allDbTypes: DocumentType[] = [
+  'Workspace',
+  'Folder',
+  'Request',
+  'Response',
+  'Environment',
+  'Variable',
+  'Settings',
+  'MockRoute',
+  'OAuth2Token',
+];
+
+const dbFileNames: Record<DocumentType, string> = {
+  Workspace: 'workspaces.db',
+  Folder: 'folders.db',
+  Request: 'requests.db',
+  Response: 'responses.db',
+  Environment: 'environments.db',
+  Variable: 'variables.db',
+  Settings: 'settings.db',
+  MockRoute: 'mock_routes.db',
+  OAuth2Token: 'oauth2_tokens.db',
+};
 
 // Get the user data path
 const getUserDataPath = (): string => {
@@ -30,121 +43,79 @@ const getUserDataPath = (): string => {
 // Get database directory path
 const getDbPath = (): string => {
   const dbPath = path.join(getUserDataPath(), 'data');
-  
+
   // Create directory if it doesn't exist
   if (!fs.existsSync(dbPath)) {
     fs.mkdirSync(dbPath, { recursive: true });
   }
-  
+
   return dbPath;
 };
 
 // Initialize all datastores
 export const initializeDatabase = async (): Promise<void> => {
+  LoggerService.info('[DB] Refactored: Initializing all datastores using Map...');
   const dbPath = getDbPath();
-  
-  // Initialize each datastore
-  workspaceDb = new Datastore<Workspace>({
-    filename: path.join(dbPath, 'workspaces.db'),
-    autoload: true,
-  });
-  
-  folderDb = new Datastore<Folder>({
-    filename: path.join(dbPath, 'folders.db'),
-    autoload: true,
-  });
-  
-  requestDb = new Datastore<Request>({
-    filename: path.join(dbPath, 'requests.db'),
-    autoload: true,
-  });
-  
-  responseDb = new Datastore<Response>({
-    filename: path.join(dbPath, 'responses.db'),
-    autoload: true,
-  });
-  
-  environmentDb = new Datastore<Environment>({
-    filename: path.join(dbPath, 'environments.db'),
-    autoload: true,
-  });
-  
-  variableDb = new Datastore<Variable>({
-    filename: path.join(dbPath, 'variables.db'),
-    autoload: true,
-  });
-  
-  settingsDb = new Datastore<Settings>({
-    filename: path.join(dbPath, 'settings.db'),
-    autoload: true,
-  });
-  
+
+  for (const type of allDbTypes) {
+    const db = new Datastore({
+      filename: path.join(dbPath, dbFileNames[type]),
+      autoload: true,
+    });
+    dbs.set(type, db);
+    LoggerService.info(`[DB] Datastore for "${type}" initialized.`);
+  }
+
   // Create indexes for better query performance
   await Promise.all([
-    // Folder indexes
-    new Promise<void>((resolve, reject) => {
-      folderDb.ensureIndex({ fieldName: 'parentId' }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    }),
-    
-    // Request indexes
-    new Promise<void>((resolve, reject) => {
-      requestDb.ensureIndex({ fieldName: 'parentId' }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    }),
-    
-    // Response indexes
-    new Promise<void>((resolve, reject) => {
-      responseDb.ensureIndex({ fieldName: 'requestId' }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    }),
-    
-    // Environment indexes
-    new Promise<void>((resolve, reject) => {
-      environmentDb.ensureIndex({ fieldName: 'workspaceId' }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    }),
-    
-    // Variable indexes
-    new Promise<void>((resolve, reject) => {
-      variableDb.ensureIndex({ fieldName: 'environmentId' }, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    }),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('Folder')!
+        .ensureIndex({ fieldName: 'parentId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('Request')!
+        .ensureIndex({ fieldName: 'parentId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('Response')!
+        .ensureIndex({ fieldName: 'requestId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('Environment')!
+        .ensureIndex({ fieldName: 'workspaceId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('Variable')!
+        .ensureIndex({ fieldName: 'environmentId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('MockRoute')!
+        .ensureIndex({ fieldName: 'workspaceId' }, (err) => (err ? reject(err) : resolve()))
+    ),
+    new Promise<void>((resolve, reject) =>
+      dbs
+        .get('OAuth2Token')!
+        .ensureIndex({ fieldName: 'requestId' }, (err) => (err ? reject(err) : resolve()))
+    ),
   ]);
-  
-  console.log('Database initialized successfully');
+
+  LoggerService.info('[DB] Database initialization complete.');
 };
 
 // Export database instances
 export const getDatabase = (type: DocumentType): Datastore => {
-  switch (type) {
-    case 'Workspace':
-      return workspaceDb;
-    case 'Folder':
-      return folderDb;
-    case 'Request':
-      return requestDb;
-    case 'Response':
-      return responseDb;
-    case 'Environment':
-      return environmentDb;
-    case 'Variable':
-      return variableDb;
-    case 'Settings':
-      return settingsDb;
-    default:
-      throw new Error(`Unknown document type: ${type}`);
+  const db = dbs.get(type);
+  if (!db) {
+    // This error should now be almost impossible if initializeDatabase has run
+    throw new Error(`Database for type "${type}" was not initialized.`);
   }
+  return db;
 };
 
 // Helper to promisify NeDB operations

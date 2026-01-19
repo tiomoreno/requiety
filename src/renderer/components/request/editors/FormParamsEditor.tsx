@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { RequestBodyParam } from '../../../../shared/types';
+import { RequestBodyParam } from '@shared/types';
 import { FaPlus, FaTrash, FaFile } from 'react-icons/fa';
+import { logger } from '../../../utils/logger';
 
 interface FormParamsEditorProps {
   params: RequestBodyParam[];
@@ -55,7 +56,7 @@ export function FormParamsEditor({ params, onChange, allowFiles = false }: FormP
         });
       }
     } catch (error) {
-      console.error('Error selecting file:', error);
+      logger.error('Error selecting file:', error);
     }
   };
 
@@ -120,7 +121,9 @@ export function FormParamsEditor({ params, onChange, allowFiles = false }: FormP
             {allowFiles ? (
               <select
                 value={param.type || 'text'}
-                onChange={(e) => handleUpdateParam(index, { type: e.target.value as 'text' | 'file' })}
+                onChange={(e) =>
+                  handleUpdateParam(index, { type: e.target.value as 'text' | 'file' })
+                }
                 className="px-2 py-1 text-sm bg-transparent border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-primary-500"
               >
                 <option value="text">Text</option>
@@ -172,7 +175,9 @@ export function FormParamsEditor({ params, onChange, allowFiles = false }: FormP
           {allowFiles ? (
             <select
               value={newParam.type || 'text'}
-              onChange={(e) => setNewParam({ ...newParam, type: e.target.value as 'text' | 'file' })}
+              onChange={(e) =>
+                setNewParam({ ...newParam, type: e.target.value as 'text' | 'file' })
+              }
               className="px-2 py-1 text-sm bg-transparent border border-gray-200 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="text">Text</option>

@@ -1,14 +1,14 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFolderHandlers } from './folder';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import * as models from '../database/models';
 import { ipcMain } from 'electron';
 
 vi.mock('electron', () => ({
   ipcMain: {
-    handle: vi.fn()
-  }
+    handle: vi.fn(),
+  },
 }));
 
 vi.mock('../database/models');
@@ -60,8 +60,8 @@ describe('Folder IPC Handlers', () => {
   });
 
   it('create should return error', async () => {
-      vi.mocked(models.createFolder).mockRejectedValue(new Error('Fail'));
-      const res = await handlers[IPC_CHANNELS.FOLDER_CREATE](null, {});
-      expect(res).toEqual({ success: false, error: 'Fail' });
+    vi.mocked(models.createFolder).mockRejectedValue(new Error('Fail'));
+    const res = await handlers[IPC_CHANNELS.FOLDER_CREATE](null, {});
+    expect(res).toEqual({ success: false, error: 'Fail' });
   });
 });

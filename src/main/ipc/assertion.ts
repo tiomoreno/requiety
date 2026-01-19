@@ -1,7 +1,8 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { updateRequest } from '../database/models';
-import type { Assertion } from '../../shared/types';
+import type { Assertion } from '@shared/types';
+import { LoggerService } from '../services/logger.service';
 
 export const registerAssertionHandlers = () => {
   ipcMain.handle(
@@ -11,7 +12,7 @@ export const registerAssertionHandlers = () => {
         const updatedRequest = await updateRequest(requestId, { assertions });
         return { success: true, data: updatedRequest };
       } catch (error) {
-        console.error('Failed to update assertions:', error);
+        LoggerService.error('Failed to update assertions:', error);
         return { success: false, error: error instanceof Error ? error.message : String(error) };
       }
     }

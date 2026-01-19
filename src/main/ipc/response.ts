@@ -1,11 +1,8 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import {
-  getResponseHistory,
-  getResponseById,
-  deleteResponseHistory,
-} from '../database/models';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
+import { getResponseHistory, getResponseById, deleteResponseHistory } from '../database/models';
 import { readResponseBody } from '../utils/file-manager';
+import { LoggerService } from '../services/logger.service';
 
 /**
  * Register all response IPC handlers
@@ -19,7 +16,7 @@ export const registerResponseHandlers = (): void => {
         const responses = await getResponseHistory(requestId, limit);
         return { success: true, data: responses };
       } catch (error) {
-        console.error('Error getting response history:', error);
+        LoggerService.error('Error getting response history:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -47,7 +44,7 @@ export const registerResponseHandlers = (): void => {
         },
       };
     } catch (error) {
-      console.error('Error getting response:', error);
+      LoggerService.error('Error getting response:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -56,19 +53,16 @@ export const registerResponseHandlers = (): void => {
   });
 
   // Delete response history
-  ipcMain.handle(
-    IPC_CHANNELS.RESPONSE_DELETE_HISTORY,
-    async (_, requestId: string) => {
-      try {
-        await deleteResponseHistory(requestId);
-        return { success: true };
-      } catch (error) {
-        console.error('Error deleting response history:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+  ipcMain.handle(IPC_CHANNELS.RESPONSE_DELETE_HISTORY, async (_, requestId: string) => {
+    try {
+      await deleteResponseHistory(requestId);
+      return { success: true };
+    } catch (error) {
+      LoggerService.error('Error deleting response history:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  );
+  });
 };

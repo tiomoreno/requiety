@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.vite/
+out/
+
+# Coverage reports
+coverage/
+
+# Package lock
+package-lock.json
+
+# Generated files
+*.min.js
+*.min.css

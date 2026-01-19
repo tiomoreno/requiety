@@ -39,6 +39,8 @@ export const ID_PREFIXES = {
   RESPONSE: 'res_',
   ENVIRONMENT: 'env_',
   VARIABLE: 'var_',
+  MOCK_ROUTE: 'mck_',
+  OAUTH2_TOKEN: 'oat_',
 } as const;
 
 // ============================================================================

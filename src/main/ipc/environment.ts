@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import type { Environment } from '../../shared/types';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
+import type { Environment } from '@shared/types';
 import {
   createEnvironment,
   updateEnvironment,
@@ -8,6 +8,7 @@ import {
   activateEnvironment,
   getEnvironmentsByWorkspace,
 } from '../database/models';
+import { LoggerService } from '../services/logger.service';
 
 /**
  * Register all environment IPC handlers
@@ -21,7 +22,7 @@ export const registerEnvironmentHandlers = (): void => {
         const environment = await createEnvironment(data);
         return { success: true, data: environment };
       } catch (error) {
-        console.error('Error creating environment:', error);
+        LoggerService.error('Error creating environment:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -38,7 +39,7 @@ export const registerEnvironmentHandlers = (): void => {
         const environment = await updateEnvironment(id, data);
         return { success: true, data: environment };
       } catch (error) {
-        console.error('Error updating environment:', error);
+        LoggerService.error('Error updating environment:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -53,7 +54,7 @@ export const registerEnvironmentHandlers = (): void => {
       await deleteEnvironment(id);
       return { success: true };
     } catch (error) {
-      console.error('Error deleting environment:', error);
+      LoggerService.error('Error deleting environment:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -67,7 +68,7 @@ export const registerEnvironmentHandlers = (): void => {
       await activateEnvironment(id);
       return { success: true };
     } catch (error) {
-      console.error('Error activating environment:', error);
+      LoggerService.error('Error activating environment:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -76,19 +77,16 @@ export const registerEnvironmentHandlers = (): void => {
   });
 
   // Get environments by workspace
-  ipcMain.handle(
-    IPC_CHANNELS.ENVIRONMENT_GET_BY_WORKSPACE,
-    async (_, workspaceId: string) => {
-      try {
-        const environments = await getEnvironmentsByWorkspace(workspaceId);
-        return { success: true, data: environments };
-      } catch (error) {
-        console.error('Error getting environments:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+  ipcMain.handle(IPC_CHANNELS.ENVIRONMENT_GET_BY_WORKSPACE, async (_, workspaceId: string) => {
+    try {
+      const environments = await getEnvironmentsByWorkspace(workspaceId);
+      return { success: true, data: environments };
+    } catch (error) {
+      LoggerService.error('Error getting environments:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  );
+  });
 };

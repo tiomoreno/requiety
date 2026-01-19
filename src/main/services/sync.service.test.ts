@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SyncService } from './sync.service';
 import * as fs from 'fs/promises';
 import * as models from '../database/models';
-import type { Workspace, Folder, Request, Environment, Variable } from '../../shared/types';
+import type { Workspace, Folder, Request, Environment, Variable } from '@shared/types';
 
 // Mock dependencies
 vi.mock('fs/promises');
@@ -140,10 +140,10 @@ describe('SyncService', () => {
       expect(models.getWorkspaceById).toHaveBeenCalledWith('ws_1');
 
       // Verify old export was cleaned up
-      expect(fs.rm).toHaveBeenCalledWith(
-        expect.stringContaining('.requiety/workspaces/ws_1'),
-        { recursive: true, force: true }
-      );
+      expect(fs.rm).toHaveBeenCalledWith(expect.stringContaining('.requiety/workspaces/ws_1'), {
+        recursive: true,
+        force: true,
+      });
 
       // Verify directories were created
       expect(fs.mkdir).toHaveBeenCalledTimes(3); // requests, folders, environments
@@ -162,13 +162,13 @@ describe('SyncService', () => {
 
       // Check that each folder was written
       const writeFileCalls = vi.mocked(fs.writeFile).mock.calls;
-      const folderWrites = writeFileCalls.filter(call =>
+      const folderWrites = writeFileCalls.filter((call) =>
         (call[0] as string).includes('/folders/')
       );
 
       expect(folderWrites.length).toBe(2);
-      expect(folderWrites.some(call => (call[0] as string).includes('folder_1.json'))).toBe(true);
-      expect(folderWrites.some(call => (call[0] as string).includes('folder_2.json'))).toBe(true);
+      expect(folderWrites.some((call) => (call[0] as string).includes('folder_1.json'))).toBe(true);
+      expect(folderWrites.some((call) => (call[0] as string).includes('folder_2.json'))).toBe(true);
     });
 
     it('should export all requests', async () => {
@@ -177,13 +177,13 @@ describe('SyncService', () => {
       expect(models.getRequestsByWorkspace).toHaveBeenCalledWith('ws_1');
 
       const writeFileCalls = vi.mocked(fs.writeFile).mock.calls;
-      const requestWrites = writeFileCalls.filter(call =>
+      const requestWrites = writeFileCalls.filter((call) =>
         (call[0] as string).includes('/requests/')
       );
 
       expect(requestWrites.length).toBe(2);
-      expect(requestWrites.some(call => (call[0] as string).includes('req_1.json'))).toBe(true);
-      expect(requestWrites.some(call => (call[0] as string).includes('req_2.json'))).toBe(true);
+      expect(requestWrites.some((call) => (call[0] as string).includes('req_1.json'))).toBe(true);
+      expect(requestWrites.some((call) => (call[0] as string).includes('req_2.json'))).toBe(true);
     });
 
     it('should export environments with their variables', async () => {
@@ -194,14 +194,14 @@ describe('SyncService', () => {
       expect(models.getVariablesByEnvironment).toHaveBeenCalledWith('env_2');
 
       const writeFileCalls = vi.mocked(fs.writeFile).mock.calls;
-      const envWrites = writeFileCalls.filter(call =>
+      const envWrites = writeFileCalls.filter((call) =>
         (call[0] as string).includes('/environments/')
       );
 
       expect(envWrites.length).toBe(2);
 
       // Check that env_1 includes variables
-      const env1Write = envWrites.find(call => (call[0] as string).includes('env_1.json'));
+      const env1Write = envWrites.find((call) => (call[0] as string).includes('env_1.json'));
       expect(env1Write).toBeDefined();
       const env1Content = env1Write![1] as string;
       expect(env1Content).toContain('"variables"');
@@ -212,8 +212,9 @@ describe('SyncService', () => {
     it('should throw error if workspace not found', async () => {
       vi.mocked(models.getWorkspaceById).mockResolvedValue(null);
 
-      await expect(SyncService.exportWorkspace('invalid_ws', '/export/path'))
-        .rejects.toThrow('Workspace not found');
+      await expect(SyncService.exportWorkspace('invalid_ws', '/export/path')).rejects.toThrow(
+        'Workspace not found'
+      );
     });
 
     it('should handle empty workspace (no folders, requests, environments)', async () => {
@@ -229,7 +230,7 @@ describe('SyncService', () => {
       // Should only write workspace file
       const writeFileCalls = vi.mocked(fs.writeFile).mock.calls;
       expect(writeFileCalls.length).toBe(1);
-      expect((writeFileCalls[0][0] as string)).toContain('workspace.json');
+      expect(writeFileCalls[0][0] as string).toContain('workspace.json');
     });
 
     it('should use correct directory structure', async () => {
@@ -238,33 +239,38 @@ describe('SyncService', () => {
       const mkdirCalls = vi.mocked(fs.mkdir).mock.calls;
 
       // Check for .requiety/workspaces/ws_1/requests
-      expect(mkdirCalls.some(call =>
-        (call[0] as string).includes('.requiety/workspaces/ws_1/requests')
-      )).toBe(true);
+      expect(
+        mkdirCalls.some((call) =>
+          (call[0] as string).includes('.requiety/workspaces/ws_1/requests')
+        )
+      ).toBe(true);
 
       // Check for .requiety/workspaces/ws_1/folders
-      expect(mkdirCalls.some(call =>
-        (call[0] as string).includes('.requiety/workspaces/ws_1/folders')
-      )).toBe(true);
+      expect(
+        mkdirCalls.some((call) => (call[0] as string).includes('.requiety/workspaces/ws_1/folders'))
+      ).toBe(true);
 
       // Check for .requiety/workspaces/ws_1/environments
-      expect(mkdirCalls.some(call =>
-        (call[0] as string).includes('.requiety/workspaces/ws_1/environments')
-      )).toBe(true);
+      expect(
+        mkdirCalls.some((call) =>
+          (call[0] as string).includes('.requiety/workspaces/ws_1/environments')
+        )
+      ).toBe(true);
     });
 
     it('should handle filesystem errors', async () => {
       vi.mocked(fs.mkdir).mockRejectedValue(new Error('Permission denied'));
 
-      await expect(SyncService.exportWorkspace('ws_1', '/export/path'))
-        .rejects.toThrow('Permission denied');
+      await expect(SyncService.exportWorkspace('ws_1', '/export/path')).rejects.toThrow(
+        'Permission denied'
+      );
     });
 
     it('should format JSON with indentation', async () => {
       await SyncService.exportWorkspace('ws_1', '/export/path');
 
       const writeFileCalls = vi.mocked(fs.writeFile).mock.calls;
-      const workspaceWrite = writeFileCalls.find(call =>
+      const workspaceWrite = writeFileCalls.find((call) =>
         (call[0] as string).includes('workspace.json')
       );
 

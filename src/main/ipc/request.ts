@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import type { Request } from '../../shared/types';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
+import type { Request } from '@shared/types';
 import {
   createRequest,
   updateRequest,
@@ -19,6 +19,7 @@ import { TemplateEngine } from '../utils/template-engine';
 import { AssertionService } from '../services/assertion.service';
 import { RequestExecutionService } from '../services/request.execution.service';
 import { GraphQLService } from '../services/graphql.service';
+import { LoggerService } from '../services/logger.service';
 
 /**
  * Register all request IPC handlers
@@ -31,21 +32,14 @@ export const registerRequestHandlers = (): void => {
       _,
       data: Pick<
         Request,
-        | 'name'
-        | 'url'
-        | 'method'
-        | 'parentId'
-        | 'sortOrder'
-        | 'headers'
-        | 'body'
-        | 'authentication'
+        'name' | 'url' | 'method' | 'parentId' | 'sortOrder' | 'headers' | 'body' | 'authentication'
       >
     ) => {
       try {
         const request = await createRequest(data);
         return { success: true, data: request };
       } catch (error) {
-        console.error('Error creating request:', error);
+        LoggerService.error('Error creating request:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -63,13 +57,7 @@ export const registerRequestHandlers = (): void => {
       data: Partial<
         Pick<
           Request,
-          | 'name'
-          | 'url'
-          | 'method'
-          | 'sortOrder'
-          | 'headers'
-          | 'body'
-          | 'authentication'
+          'name' | 'url' | 'method' | 'sortOrder' | 'headers' | 'body' | 'authentication'
         >
       >
     ) => {
@@ -77,7 +65,7 @@ export const registerRequestHandlers = (): void => {
         const request = await updateRequest(id, data);
         return { success: true, data: request };
       } catch (error) {
-        console.error('Error updating request:', error);
+        LoggerService.error('Error updating request:', error);
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -92,7 +80,7 @@ export const registerRequestHandlers = (): void => {
       await deleteRequest(id);
       return { success: true };
     } catch (error) {
-      console.error('Error deleting request:', error);
+      LoggerService.error('Error deleting request:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -106,7 +94,7 @@ export const registerRequestHandlers = (): void => {
       const request = await duplicateRequest(id);
       return { success: true, data: request };
     } catch (error) {
-      console.error('Error duplicating request:', error);
+      LoggerService.error('Error duplicating request:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -115,21 +103,18 @@ export const registerRequestHandlers = (): void => {
   });
 
   // Get requests by workspace
-  ipcMain.handle(
-    IPC_CHANNELS.REQUEST_GET_BY_WORKSPACE,
-    async (_, workspaceId: string) => {
-      try {
-        const requests = await getRequestsByWorkspace(workspaceId);
-        return { success: true, data: requests };
-      } catch (error) {
-        console.error('Error getting requests:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
+  ipcMain.handle(IPC_CHANNELS.REQUEST_GET_BY_WORKSPACE, async (_, workspaceId: string) => {
+    try {
+      const requests = await getRequestsByWorkspace(workspaceId);
+      return { success: true, data: requests };
+    } catch (error) {
+      LoggerService.error('Error getting requests:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  );
+  });
 
   // Get request by ID
   ipcMain.handle(IPC_CHANNELS.REQUEST_GET_BY_ID, async (_, id: string) => {
@@ -137,7 +122,7 @@ export const registerRequestHandlers = (): void => {
       const request = await getRequestById(id);
       return { success: true, data: request };
     } catch (error) {
-      console.error('Error getting request:', error);
+      LoggerService.error('Error getting request:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -156,12 +141,12 @@ export const registerRequestHandlers = (): void => {
       // Execute request using shared service
       const response = await RequestExecutionService.executeRequest(request);
 
-      return { 
-        success: true, 
-        data: response
+      return {
+        success: true,
+        data: response,
       };
     } catch (error) {
-      console.error('Error sending request:', error);
+      LoggerService.error('Error sending request:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -170,18 +155,19 @@ export const registerRequestHandlers = (): void => {
   });
 
   // GraphQL Introspection
-  ipcMain.handle(IPC_CHANNELS.GRAPHQL_INTROSPECT, async (_, { url, headers }: { url: string; headers: any }) => {
-    try {
-      const data = await GraphQLService.introspect(url, headers);
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error in GraphQL introspection:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+  ipcMain.handle(
+    IPC_CHANNELS.GRAPHQL_INTROSPECT,
+    async (_, { url, headers }: { url: string; headers: any }) => {
+      try {
+        const data = await GraphQLService.introspect(url, headers);
+        return { success: true, data };
+      } catch (error) {
+        LoggerService.error('Error in GraphQL introspection:', error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
     }
-  });
+  );
 };
-
-

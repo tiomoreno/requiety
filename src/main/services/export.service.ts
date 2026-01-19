@@ -3,9 +3,9 @@ import {
   getEnvironmentsByWorkspace,
   getVariablesByEnvironment,
   getFoldersByWorkspace,
-  getRequestsByWorkspace
+  getRequestsByWorkspace,
 } from '../database/models';
-import { Workspace, Environment, Request, Folder, Variable } from '../../shared/types';
+import { Workspace, Environment, Request, Folder, Variable } from '@shared/types';
 
 interface ExportData {
   version: string;

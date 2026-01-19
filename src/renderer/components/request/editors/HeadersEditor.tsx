@@ -1,4 +1,4 @@
-import { RequestHeader } from '../../../../shared/types';
+import { RequestHeader } from '@shared/types';
 import { useState } from 'react';
 
 interface HeadersEditorProps {
@@ -11,7 +11,7 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
     const newHeaders = [...headers];
     newHeaders[index] = { ...newHeaders[index], [field]: value };
     onChange(newHeaders);
-    
+
     // Auto-add new row if modifying the last empty row
     if (index === newHeaders.length - 1 && (field === 'name' || field === 'value') && value) {
       onChange([...newHeaders, { name: '', value: '', enabled: true }]);
@@ -32,10 +32,10 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
     // We shouldn't mutate props directly, but we can call onChange via useEffect or just render an empty row
     // For a controlled component, it's better if the parent initializes it, but we can handle render logic here.
     // Let's just render an empty row state if props are empty, but safer to let parent/useEffect handle it.
-    // Actually, simpler: just map over headers, and if last one isn't empty, showing an "Add" button or logic 
+    // Actually, simpler: just map over headers, and if last one isn't empty, showing an "Add" button or logic
     // is common. Or key-value editors usually have a "ghost" row at the bottom.
   }
-  
+
   // Let's use a "display headers" approach: render existing + 1 empty if not exists
   const displayHeaders = headers.length > 0 ? headers : [{ name: '', value: '', enabled: true }];
 
@@ -48,10 +48,13 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
         <div className="flex-1 py-2 px-3">Description</div>
         <div className="w-8 py-2 px-3"></div>
       </div>
-      
+
       <div className="flex flex-col">
         {displayHeaders.map((header, index) => (
-          <div key={index} className="flex border-b border-gray-100 dark:border-gray-800 last:border-0 group">
+          <div
+            key={index}
+            className="flex border-b border-gray-100 dark:border-gray-800 last:border-0 group"
+          >
             {/* Checkbox */}
             <div className="w-8 py-2 px-3 flex items-center justify-center">
               <input
@@ -59,12 +62,14 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                 checked={header.enabled}
                 onChange={(e) => handleChange(index, 'enabled', e.target.checked)}
                 className={`w-4 h-4 text-primary-600 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 ${
-                  header.isAuto && header.name === 'Cache-Control' ? 'opacity-50 cursor-not-allowed' : ''
+                  header.isAuto && header.name === 'Cache-Control'
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
                 }`}
                 disabled={header.isAuto && header.name === 'Cache-Control'}
               />
             </div>
-            
+
             {/* Key Input */}
             <div className="flex-1 border-r border-gray-100 dark:border-gray-800 relative">
               <input
@@ -73,21 +78,25 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                 onChange={(e) => handleChange(index, 'name', e.target.value)}
                 placeholder="Key"
                 className={`w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm ${
-                  header.isAuto ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed' : 'text-gray-900 dark:text-gray-100'
+                  header.isAuto
+                    ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed'
+                    : 'text-gray-900 dark:text-gray-100'
                 } placeholder-gray-400`}
                 readOnly={header.isAuto}
               />
             </div>
-            
+
             {/* Value Input */}
-              <div className="flex-1 relative">
+            <div className="flex-1 relative">
               <input
                 type="text"
                 value={header.value}
                 onChange={(e) => handleChange(index, 'value', e.target.value)}
                 placeholder="Value"
                 className={`w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm ${
-                  header.isAuto ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed' : 'text-gray-900 dark:text-gray-100'
+                  header.isAuto
+                    ? 'text-gray-500 dark:text-gray-500 italic cursor-not-allowed'
+                    : 'text-gray-900 dark:text-gray-100'
                 } placeholder-gray-400`}
                 readOnly={header.isAuto}
               />
@@ -103,24 +112,24 @@ export function HeadersEditor({ headers, onChange }: HeadersEditorProps) {
                 className="w-full py-2 px-3 bg-transparent border-none focus:ring-0 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400"
               />
             </div>
-            
+
             {/* Delete Button */}
             <div className="w-8 py-2 px-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-               {/* Only show delete if it's not the only empty row, or clearer logic: show delete button */}
-               <button 
-                 onClick={() => handleRemove(index)}
-                 className={`text-gray-400 hover:text-red-500 ${header.isAuto ? 'invisible' : ''}`}
-                 title="Remove header"
-               >
-                 ×
-               </button>
+              {/* Only show delete if it's not the only empty row, or clearer logic: show delete button */}
+              <button
+                onClick={() => handleRemove(index)}
+                className={`text-gray-400 hover:text-red-500 ${header.isAuto ? 'invisible' : ''}`}
+                title="Remove header"
+              >
+                ×
+              </button>
             </div>
           </div>
         ))}
-        
-        {/* If the last row is fully filled, automatically add a draft row logic is handled in handleChange 
+
+        {/* If the last row is fully filled, automatically add a draft row logic is handled in handleChange
             But if we are strictly using displayHeaders initialized above, we need to ensure the update propagates correctly.
-            The 'displayHeaders' above only creates a local variable if props are empty. 
+            The 'displayHeaders' above only creates a local variable if props are empty.
             If props are NOT empty, we rely on the parent updating headers via onChange.
             The auto-add logic in handleChange (line 15) handles adding a NEW row to the list when user types in the last one.
             We need to make sure 'index' aligns with 'headers'.

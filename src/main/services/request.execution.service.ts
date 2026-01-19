@@ -1,11 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  Request, 
-  Response, 
-  TestResult,
-  Variable,
-  RequestHeader
-} from '../../shared/types';
+import { Request, Response, TestResult, Variable, RequestHeader } from '@shared/types';
 import {
   getWorkspaceIdForRequest,
   getActiveEnvironment,
@@ -65,14 +59,20 @@ export class RequestExecutionService {
       // If token is expired, try to refresh it
       if (token && token.expiresAt && Date.now() >= token.expiresAt) {
         if (token.refreshToken) {
-          token = await OAuthService.refreshToken(renderedRequest.authentication.oauth2, token.refreshToken, renderedRequest._id);
+          token = await OAuthService.refreshToken(
+            renderedRequest.authentication.oauth2,
+            token.refreshToken,
+            renderedRequest._id
+          );
         } else {
           token = null; // Token expired, no refresh token
         }
       }
 
       if (!token) {
-        throw new Error('OAuth 2.0 token is missing, expired, or invalid. Please acquire a new token.');
+        throw new Error(
+          'OAuth 2.0 token is missing, expired, or invalid. Please acquire a new token.'
+        );
       }
 
       // Add Authorization header
@@ -81,12 +81,13 @@ export class RequestExecutionService {
         value: `Bearer ${token.accessToken}`,
         enabled: true,
       };
-      
+
       // Remove any existing auth header and add the new one
-      renderedRequest.headers = renderedRequest.headers.filter(h => h.name.toLowerCase() !== 'authorization');
+      renderedRequest.headers = renderedRequest.headers.filter(
+        (h) => h.name.toLowerCase() !== 'authorization'
+      );
       renderedRequest.headers.push(authHeader);
     }
-
 
     // Calculate final headers (Host, etc) after rendering
     if (renderedRequest.headers) {
@@ -107,10 +108,16 @@ export class RequestExecutionService {
 
     // Handle gRPC Request
     if (renderedRequest.method === 'GRPC') {
-      if (!renderedRequest.grpc?.protoFilePath || !renderedRequest.grpc.service || !renderedRequest.grpc.method) {
-        throw new Error('Missing gRPC configuration: proto file, service, and method are required.');
+      if (
+        !renderedRequest.grpc?.protoFilePath ||
+        !renderedRequest.grpc.service ||
+        !renderedRequest.grpc.method
+      ) {
+        throw new Error(
+          'Missing gRPC configuration: proto file, service, and method are required.'
+        );
       }
-      
+
       const grpcResponse = await GrpcService.makeUnaryCall({
         protoFilePath: renderedRequest.grpc.protoFilePath,
         url: renderedRequest.url,
@@ -137,11 +144,16 @@ export class RequestExecutionService {
       };
 
       if (request.postRequestScript) {
-        variables = await this.runScript(request.postRequestScript, variables, activeEnvId, mockRawResponse);
+        variables = await this.runScript(
+          request.postRequestScript,
+          variables,
+          activeEnvId,
+          mockRawResponse
+        );
       }
-      
+
       // No assertions for gRPC for now
-      
+
       const bodyPath = await saveResponseBody(mockRawResponse._id, responseBody);
       const savedResponse = await createResponse({
         requestId: request._id,
@@ -169,7 +181,12 @@ export class RequestExecutionService {
     const responseBody = rawResponse.body || '';
 
     if (request.postRequestScript) {
-      variables = await this.runScript(request.postRequestScript, variables, activeEnvId, rawResponse);
+      variables = await this.runScript(
+        request.postRequestScript,
+        variables,
+        activeEnvId,
+        rawResponse
+      );
     }
 
     let testResults: TestResult | undefined;
@@ -204,31 +221,33 @@ export class RequestExecutionService {
 
     const pm = {
       environment: {
-        get: (key: string) => variables.find(v => v.key === key)?.value,
+        get: (key: string) => variables.find((v) => v.key === key)?.value,
         set: (key: string, value: string) => {
           pendingUpdates.set(key, String(value));
         },
       },
-      response: response ? {
-        code: response.statusCode,
-        status: response.statusMessage,
-        headers: response.headers,
-        body: response.body || null,
-        json: () => {
-          try {
-            return JSON.parse(response.body || '{}');
-          } catch {
-            return null;
+      response: response
+        ? {
+            code: response.statusCode,
+            status: response.statusMessage,
+            headers: response.headers,
+            body: response.body || null,
+            json: () => {
+              try {
+                return JSON.parse(response.body || '{}');
+              } catch {
+                return null;
+              }
+            },
+            text: () => response.body || null,
           }
-        },
-        text: () => response.body || null,
-      } : undefined,
+        : undefined,
     };
 
     await ScriptService.executeScript(script, { pm });
 
     for (const [key, value] of pendingUpdates.entries()) {
-      const existing = variables.find(v => v.key === key);
+      const existing = variables.find((v) => v.key === key);
       if (existing) {
         await updateVariable(existing._id, { value });
         existing.value = value;

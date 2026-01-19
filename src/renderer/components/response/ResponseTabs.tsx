@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Response, Request } from '../../../shared/types';
+import { Response, Request } from '@shared/types';
 import { ResponseHeaders } from './ResponseHeaders';
 import { CodeEditor } from '../common/CodeEditor';
 import { TestResultsPanel } from './TestResultsPanel';
@@ -15,7 +15,7 @@ export function ResponseTabs({ response, request }: ResponseTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('body');
 
   const isJson = useMemo(() => {
-    const contentType = response.headers?.find(h => h.name.toLowerCase() === 'content-type');
+    const contentType = response.headers?.find((h) => h.name.toLowerCase() === 'content-type');
     return contentType?.value.includes('application/json');
   }, [response.headers]);
 
@@ -80,30 +80,23 @@ export function ResponseTabs({ response, request }: ResponseTabsProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden relative bg-white dark:bg-gray-950">
-        {activeTab === 'body' && (
-          isJson ? (
-            <CodeEditor
-              value={formattedBody}
-              language="json"
-              readOnly={true}
-            />
+        {activeTab === 'body' &&
+          (isJson ? (
+            <CodeEditor value={formattedBody} language="json" readOnly={true} />
           ) : (
-            <textarea 
+            <textarea
               readOnly
               value={response.body || ''}
               className="w-full h-full p-4 font-mono text-sm bg-transparent border-none resize-none focus:ring-0 text-gray-800 dark:text-gray-200"
             />
-          )
-        )}
-        
-        {activeTab === 'headers' && (
-           <ResponseHeaders headers={response.headers || []} />
-        )}
+          ))}
+
+        {activeTab === 'headers' && <ResponseHeaders headers={response.headers || []} />}
 
         {activeTab === 'tests' && (
-          <TestResultsPanel 
-            testResult={response.testResults} 
-            assertions={request.assertions || []} 
+          <TestResultsPanel
+            testResult={response.testResults}
+            assertions={request.assertions || []}
           />
         )}
       </div>

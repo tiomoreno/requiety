@@ -13,14 +13,29 @@ import { dataTransferService } from './services/data-transfer.service';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { useSettings } from './contexts/SettingsContext';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { MockServerPanel } from './components/mock/MockServerPanel';
+
+type View = 'requests' | 'mock';
 
 function AppContent() {
   const { settings, updateSettings } = useSettings();
+  const [currentView, setCurrentView] = useState<View>('requests');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportCurlDialog, setShowImportCurlDialog] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { workspaces, activeWorkspace, loading: workspacesLoading, refreshWorkspaces } = useWorkspaces();
-  const { selectedRequest, updateRequest, createRequest, loading: dataLoading, refreshData } = useData();
+  const {
+    workspaces,
+    activeWorkspace,
+    loading: workspacesLoading,
+    refreshWorkspaces,
+  } = useWorkspaces();
+  const {
+    selectedRequest,
+    updateRequest,
+    createRequest,
+    loading: dataLoading,
+    refreshData,
+  } = useData();
 
   // Ref for focusing search input
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -58,25 +73,72 @@ function AppContent() {
   const loading = workspacesLoading || (dataLoading && !workspaces.length);
 
   // Helper to determining current visual theme
-  const isDark = settings?.theme === 'dark' ||
+  const isDark =
+    settings?.theme === 'dark' ||
     (settings?.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const toggleTheme = () => {
-     const newTheme = isDark ? 'light' : 'dark';
-     updateSettings({ theme: newTheme });
+    const newTheme = isDark ? 'light' : 'dark';
+    updateSettings({ theme: newTheme });
   };
 
-  // Note: Theme application logic is handled centrally in SettingsContext
-
   const hasWorkspaces = workspaces.length > 0;
+
+  const renderMainContent = () => {
+    if (currentView === 'mock') {
+      return <MockServerPanel />;
+    }
+
+    // Default to 'requests' view
+    if (selectedRequest) {
+      return (
+        <RequestPanel
+          request={selectedRequest}
+          onRequestUpdate={(updated) => updateRequest(updated._id, updated)}
+        />
+      );
+    }
+
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Select a request
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Choose a request from the sidebar or create a new one
+          </p>
+          <div className="mt-6 text-sm text-gray-500 dark:text-gray-500">
+            <p className="font-medium mb-2">Keyboard Shortcuts:</p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1 max-w-md mx-auto text-left">
+              <span className="text-right">Cmd+N</span>
+              <span>New Request</span>
+              <span className="text-right">Cmd+Shift+N</span>
+              <span>New Folder</span>
+              <span className="text-right">Cmd+Enter</span>
+              <span>Send Request</span>
+              <span className="text-right">Cmd+D</span>
+              <span>Duplicate Request</span>
+              <span className="text-right">Cmd+F</span>
+              <span>Search</span>
+              <span className="text-right">Cmd+\</span>
+              <span>Toggle Sidebar</span>
+              <span className="text-right">Cmd+,</span>
+              <span>Settings</span>
+              <span className="text-right">Delete</span>
+              <span>Delete Request</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="w-screen h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="h-12 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center px-4">
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Requiety
-        </h1>
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Requiety</h1>
         <div className="ml-auto flex items-center gap-2">
           {/* Toggle Sidebar Button */}
           {hasWorkspaces && (
@@ -86,7 +148,12 @@ function AppContent() {
               title={sidebarCollapsed ? 'Show Sidebar (Cmd+\\)' : 'Hide Sidebar (Cmd+\\)'}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               </svg>
             </button>
           )}
@@ -116,41 +183,14 @@ function AppContent() {
                 onCreateWorkspace={() => setShowCreateDialog(true)}
                 onImportCurl={() => setShowImportCurlDialog(true)}
                 searchInputRef={searchInputRef}
+                currentView={currentView}
+                onNavigate={setCurrentView}
               />
             )}
 
             {/* Main Panel */}
             <main className="flex-1 flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
-              {selectedRequest ? (
-                <RequestPanel
-                  request={selectedRequest}
-                  onRequestUpdate={(updated) => updateRequest(updated._id, updated)}
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                      Select a request
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Choose a request from the sidebar or create a new one
-                    </p>
-                    <div className="mt-6 text-sm text-gray-500 dark:text-gray-500">
-                      <p className="font-medium mb-2">Keyboard Shortcuts:</p>
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-1 max-w-md mx-auto text-left">
-                        <span className="text-right">Cmd+N</span><span>New Request</span>
-                        <span className="text-right">Cmd+Shift+N</span><span>New Folder</span>
-                        <span className="text-right">Cmd+Enter</span><span>Send Request</span>
-                        <span className="text-right">Cmd+D</span><span>Duplicate Request</span>
-                        <span className="text-right">Cmd+F</span><span>Search</span>
-                        <span className="text-right">Cmd+\</span><span>Toggle Sidebar</span>
-                        <span className="text-right">Cmd+,</span><span>Settings</span>
-                        <span className="text-right">Delete</span><span>Delete Request</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {renderMainContent()}
             </main>
           </>
         ) : (
@@ -160,21 +200,14 @@ function AppContent() {
 
       {/* Status Bar */}
       <footer className="h-6 bg-primary-600 dark:bg-primary-700 flex items-center px-4 text-xs text-white">
-        <span>
-          {activeWorkspace ? `Workspace: ${activeWorkspace.name}` : 'Ready'}
-        </span>
+        <span>{activeWorkspace ? `Workspace: ${activeWorkspace.name}` : 'Ready'}</span>
         {sidebarCollapsed && (
-          <span className="ml-auto opacity-75">
-            Sidebar hidden (Cmd+\ to show)
-          </span>
+          <span className="ml-auto opacity-75">Sidebar hidden (Cmd+\ to show)</span>
         )}
       </footer>
 
       {/* Dialogs */}
-      <CreateWorkspaceDialog
-        isOpen={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)}
-      />
+      <CreateWorkspaceDialog isOpen={showCreateDialog} onClose={() => setShowCreateDialog(false)} />
       <ImportCurlDialog
         isOpen={showImportCurlDialog}
         onClose={() => setShowImportCurlDialog(false)}

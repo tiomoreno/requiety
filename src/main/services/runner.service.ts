@@ -1,12 +1,8 @@
 import { BrowserWindow } from 'electron';
-import { 
-  CollectionRunResult, 
-  Request, 
-  RunProgress, 
-  RunnerStatus 
-} from '../../shared/types';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { CollectionRunResult, Request, RunProgress, RunnerStatus } from '@shared/types';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { RequestExecutionService } from './request.execution.service';
+import { LoggerService } from './logger.service';
 
 export class RunnerService {
   private static status: RunnerStatus = 'idle';
@@ -50,15 +46,15 @@ export class RunnerService {
           completed: completedRequests,
           currentRequestName: request.name,
           passed: passedRequests,
-          failed: failedRequests
+          failed: failedRequests,
         });
 
         try {
           const response = await RequestExecutionService.executeRequest(request);
-          
+
           const hasFailures = response.testResults && response.testResults.failed > 0;
           const status = hasFailures ? 'fail' : 'pass';
-          
+
           if (status === 'pass') passedRequests++;
           else failedRequests++;
 
@@ -68,38 +64,37 @@ export class RunnerService {
             status,
             statusCode: response.statusCode,
             duration: response.elapsedTime,
-            assertionResults: response.testResults
+            assertionResults: response.testResults,
           });
-
         } catch (error) {
           failedRequests++;
           results.push({
             requestId: request._id,
             requestName: request.name,
             status: 'error',
-            duration: 0
+            duration: 0,
           });
-          console.error(`Runner error for request ${request.name}:`, error);
+          LoggerService.error(`Runner error for request ${request.name}:`, error);
         }
 
         completedRequests++;
-        
+
         // Notify Progress
         this.emitProgress(window, {
           total: totalRequests,
           completed: completedRequests,
           currentRequestName: request.name,
           passed: passedRequests,
-          failed: failedRequests
+          failed: failedRequests,
         });
 
         // Small delay to prevent UI freeze
-        await new Promise(resolve => setTimeout(resolve, 50)); 
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
       const endTime = Date.now();
       const finalStatus: RunnerStatus = this.shouldStop ? 'stopped' : 'completed';
-      
+
       this.status = 'idle'; // Reset status
 
       return {
@@ -109,9 +104,8 @@ export class RunnerService {
         failedRequests,
         startTime,
         endTime,
-        results
+        results,
       };
-
     } catch (error) {
       this.status = 'error';
       throw error;
@@ -133,9 +127,12 @@ export class RunnerService {
   /**
    * Helper to fetch all requests in a folder/workspace recursively
    */
-  private static async fetchRequestsFlattened(targetId: string, type: 'folder' | 'workspace'): Promise<Request[]> {
+  private static async fetchRequestsFlattened(
+    targetId: string,
+    type: 'folder' | 'workspace'
+  ): Promise<Request[]> {
     const { getRequestsByWorkspace, getFoldersByWorkspace } = await import('../database/models');
-    
+
     if (type === 'workspace') {
       const requests = await getRequestsByWorkspace(targetId);
       return requests.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -144,7 +141,7 @@ export class RunnerService {
     // For folders, we need to get all child requests recursively.
     const allRequests: Request[] = [];
     const folderQueue: string[] = [targetId];
-    
+
     // This can be optimized, but for now a simple BFS-like traversal is fine.
     // We can reuse getRequestsByWorkspace if we can get all folder IDs first.
     const { getDatabase, dbOperation } = await import('../database');
@@ -155,15 +152,19 @@ export class RunnerService {
     let currentParentId = folderQueue.shift();
     while (currentParentId) {
       // Get requests in current folder
-      const requestsInFolder = await dbOperation<Request[]>(cb => requestDb.find({ parentId: currentParentId }, cb));
+      const requestsInFolder = await dbOperation<Request[]>((cb) =>
+        requestDb.find({ parentId: currentParentId }, cb)
+      );
       allRequests.push(...requestsInFolder);
 
       // Get subfolders and add to queue
-      const subFolders = await dbOperation<any[]>(cb => folderDb.find({ parentId: currentParentId }, cb));
+      const subFolders = await dbOperation<any[]>((cb) =>
+        folderDb.find({ parentId: currentParentId }, cb)
+      );
       for (const sub of subFolders) {
         folderQueue.push(sub._id);
       }
-      
+
       currentParentId = folderQueue.shift();
     }
 

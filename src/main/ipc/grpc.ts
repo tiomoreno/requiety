@@ -1,5 +1,5 @@
 import { ipcMain, dialog } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { GrpcService } from '../services/grpc.service';
 
 export const registerGrpcHandlers = () => {

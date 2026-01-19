@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { ScriptService } from './script.service';
+import { LoggerService } from './logger.service';
 
 describe('ScriptService', () => {
   it('should execute valid script and modify context', async () => {
@@ -10,31 +11,31 @@ describe('ScriptService', () => {
           return true;
       });
     `;
-    
+
     const context = {
       pm: {
         environment: {
           set: vi.fn(),
         },
         test: vi.fn(),
-      }
+      },
     };
 
     await ScriptService.executeScript(script, context);
-    
+
     expect(context.pm.environment.set).toHaveBeenCalledWith('token', '123');
     expect(context.pm.test).toHaveBeenCalled();
   });
 
   it('should handle empty script', async () => {
-      const context = { foo: 'bar' };
-      const result = await ScriptService.executeScript('', context);
-      expect(result).toBe(context);
+    const context = { foo: 'bar' };
+    const result = await ScriptService.executeScript('', context);
+    expect(result).toBe(context);
   });
 
   it('should prevent access to process/require', async () => {
-      // Trying to access process should fail or be undefined in sandbox
-      const script = `
+    // Trying to access process should fail or be undefined in sandbox
+    const script = `
         try {
             if (process) {
                 pm.leak = 'leaked';
@@ -47,27 +48,27 @@ describe('ScriptService', () => {
              pm.safe = true;
         }
       `;
-      
-      const context: any = { pm: {} };
-      await ScriptService.executeScript(script, context);
-      expect(context.pm.safe).toBe(true);
-      expect(context.pm.leak).toBeUndefined();
+
+    const context: any = { pm: {} };
+    await ScriptService.executeScript(script, context);
+    expect(context.pm.safe).toBe(true);
+    expect(context.pm.leak).toBeUndefined();
   });
 
   it('should handle syntax errors gracefully', async () => {
-     const script = `var x = ;`; // Syntax error
-     const context = {};
-     
-     await expect(ScriptService.executeScript(script, context)).rejects.toThrow();
+    const script = `var x = ;`; // Syntax error
+    const context = {};
+
+    await expect(ScriptService.executeScript(script, context)).rejects.toThrow();
   });
-  
+
   // Timeout test might be flaky in CI/CD, but good for local
   it('should timeout for infinite loops', async () => {
-      const script = `while(true) {}`;
-      const context = {};
+    const script = `while(true) {}`;
+    const context = {};
 
-      // Default timeout is 1000ms
-      await expect(ScriptService.executeScript(script, context, 100)).rejects.toThrow();
+    // Default timeout is 1000ms
+    await expect(ScriptService.executeScript(script, context, 100)).rejects.toThrow();
   });
 
   describe('Sandbox Security', () => {
@@ -150,7 +151,7 @@ describe('ScriptService', () => {
 
     it('should allow safe console logging', async () => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const logSpy = vi.spyOn(LoggerService, 'info').mockImplementation(() => {});
 
       const script = `
         console.log('test message');
@@ -159,7 +160,7 @@ describe('ScriptService', () => {
       const context = {};
       await ScriptService.executeScript(script, context);
 
-      expect(logSpy).toHaveBeenCalledWith('[Script Log]', 'test message');
+      expect(logSpy).toHaveBeenCalledWith('[Script]', 'test message');
       logSpy.mockRestore();
     });
 

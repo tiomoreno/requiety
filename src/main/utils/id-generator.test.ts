@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { generateId, getCurrentTimestamp } from './id-generator';
-import { ID_PREFIXES } from '../../shared/constants';
+import { ID_PREFIXES } from '@shared/constants';
 
 vi.mock('uuid', () => ({
-  v4: () => '1234'
+  v4: () => '1234',
 }));
 
 describe('ID Generator', () => {

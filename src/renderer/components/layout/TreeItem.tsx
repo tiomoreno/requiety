@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { WorkspaceTreeItem } from '../../../shared/types';
+import type { WorkspaceTreeItem } from '@shared/types';
 import { ContextMenu } from '../common/ContextMenu';
+import { logger } from '../../utils/logger';
 
 interface TreeItemProps {
   item: WorkspaceTreeItem;
@@ -12,13 +13,21 @@ interface TreeItemProps {
   forceExpand?: boolean;
 }
 
-export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, forceExpand }: TreeItemProps) => {
+export const TreeItem = ({
+  item,
+  onSelect,
+  onRename,
+  onMove,
+  onRun,
+  selectedId,
+  forceExpand,
+}: TreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
   const [isDragOver, setIsDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  
+
   useEffect(() => {
     if (forceExpand) {
       setIsExpanded(true);
@@ -99,10 +108,10 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
       try {
         const data = JSON.parse(e.dataTransfer.getData('application/json'));
         if (data.id !== item.id) {
-           onMove(data.id, item.id);
+          onMove(data.id, item.id);
         }
       } catch (err) {
-        console.error('Invalid drag data', err);
+        logger.error('Invalid drag data', err);
       }
     }
   };
@@ -136,8 +145,8 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors border ${
-          isDragOver 
-            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/40' 
+          isDragOver
+            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/40'
             : 'border-transparent' // Default border
         } ${
           isSelected
@@ -158,12 +167,7 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
               setIsExpanded(!isExpanded);
             }}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         )}
 
@@ -200,7 +204,7 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
         ) : (
           <span className="text-sm truncate flex-1">{item.name}</span>
         )}
-        
+
         {isFolder && onRun && (
           <button
             className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500 hover:text-green-600 transition-all"
@@ -211,7 +215,11 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
             title="Run Folder"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
             </svg>
           </button>
         )}
@@ -228,7 +236,11 @@ export const TreeItem = ({ item, onSelect, onRename, onMove, onRun, selectedId, 
               onClick: () => onRun && onRun(item.id, item.name, 'folder'),
               icon: (
                 <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ),
             },

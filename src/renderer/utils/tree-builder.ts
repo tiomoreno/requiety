@@ -1,4 +1,4 @@
-import type { Folder, Request, WorkspaceTreeItem } from '../../shared/types';
+import type { Folder, Request, WorkspaceTreeItem } from '@shared/types';
 
 /**
  * Build a hierarchical tree structure from flat arrays of folders and requests
@@ -90,10 +90,7 @@ export const buildTree = (
 /**
  * Find an item in the tree by ID
  */
-export const findItemInTree = (
-  tree: WorkspaceTreeItem[],
-  id: string
-): WorkspaceTreeItem | null => {
+export const findItemInTree = (tree: WorkspaceTreeItem[], id: string): WorkspaceTreeItem | null => {
   for (const item of tree) {
     if (item.id === id) {
       return item;
@@ -113,10 +110,7 @@ export const findItemInTree = (
 /**
  * Get all parent IDs for an item
  */
-export const getParentIds = (
-  tree: WorkspaceTreeItem[],
-  itemId: string
-): string[] => {
+export const getParentIds = (tree: WorkspaceTreeItem[], itemId: string): string[] => {
   const parents: string[] = [];
 
   const findParents = (items: WorkspaceTreeItem[], targetId: string): boolean => {

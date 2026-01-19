@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Settings } from '../../shared/types';
+import { Settings } from '@shared/types';
 import { settingsService } from '../services/settings.service';
+import { logger } from '../utils/logger';
 
 interface SettingsContextType {
   settings: Settings | null;
@@ -37,7 +38,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       const data = await settingsService.get();
       setSettings(data);
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      logger.error('Failed to load settings:', error);
     } finally {
       setLoading(false);
     }
@@ -48,15 +49,17 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       const updated = await settingsService.update(data);
       setSettings(updated);
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      logger.error('Failed to update settings:', error);
       throw error;
     }
   };
 
   const applyTheme = (theme: 'light' | 'dark' | 'auto') => {
     const root = window.document.documentElement;
-    const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
+    const isDark =
+      theme === 'dark' ||
+      (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
     if (isDark) {
       root.classList.add('dark');
     } else {
@@ -68,7 +71,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const closeSettings = () => setIsSettingsOpen(false);
 
   return (
-    <SettingsContext.Provider value={{ settings, loading, updateSettings, isSettingsOpen, openSettings, closeSettings }}>
+    <SettingsContext.Provider
+      value={{ settings, loading, updateSettings, isSettingsOpen, openSettings, closeSettings }}
+    >
       {children}
     </SettingsContext.Provider>
   );

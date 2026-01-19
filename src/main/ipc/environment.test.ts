@@ -1,14 +1,14 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerEnvironmentHandlers } from './environment';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import * as models from '../database/models';
 import { ipcMain } from 'electron';
 
 vi.mock('electron', () => ({
   ipcMain: {
-    handle: vi.fn()
-  }
+    handle: vi.fn(),
+  },
 }));
 
 vi.mock('../database/models');
@@ -44,7 +44,7 @@ describe('Environment IPC Handlers', () => {
     const res = await handlers[IPC_CHANNELS.ENVIRONMENT_DELETE](null, 'e1');
     expect(res).toEqual({ success: true });
   });
-  
+
   it('activate should success', async () => {
     vi.mocked(models.activateEnvironment).mockResolvedValue(undefined);
     const res = await handlers[IPC_CHANNELS.ENVIRONMENT_ACTIVATE](null, 'e1');

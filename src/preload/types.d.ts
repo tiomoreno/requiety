@@ -15,8 +15,8 @@ import type {
   OAuth2Token,
   RunProgress,
   CollectionRunResult,
-} from '../shared/types';
-import type { IpcChannel } from '../shared/ipc-channels';
+} from '@shared/types';
+import type { IpcChannel } from '@shared/ipc-channels';
 
 export interface ElectronAPI {
   workspace: {
@@ -36,7 +36,9 @@ export interface ElectronAPI {
   };
 
   request: {
-    create: (data: Omit<Request, '_id' | 'type' | 'created' | 'modified'>) => Promise<ApiResponse<Request>>;
+    create: (
+      data: Omit<Request, '_id' | 'type' | 'created' | 'modified'>
+    ) => Promise<ApiResponse<Request>>;
     update: (id: string, data: Partial<Request>) => Promise<ApiResponse<Request>>;
     delete: (id: string) => Promise<ApiResponse<void>>;
     duplicate: (id: string) => Promise<ApiResponse<Request>>;
@@ -64,10 +66,20 @@ export interface ElectronAPI {
   };
 
   oauth: {
-    startAuthCodeFlow: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
-    clientCredentials: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    startAuthCodeFlow: (
+      config: OAuth2Config,
+      requestId: string
+    ) => Promise<ApiResponse<OAuth2Token>>;
+    clientCredentials: (
+      config: OAuth2Config,
+      requestId: string
+    ) => Promise<ApiResponse<OAuth2Token>>;
     passwordGrant: (config: OAuth2Config, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
-    refreshToken: (config: OAuth2Config, refreshToken: string, requestId: string) => Promise<ApiResponse<OAuth2Token>>;
+    refreshToken: (
+      config: OAuth2Config,
+      refreshToken: string,
+      requestId: string
+    ) => Promise<ApiResponse<OAuth2Token>>;
     getToken: (requestId: string) => Promise<ApiResponse<OAuth2Token | null>>;
     clearToken: (requestId: string) => Promise<ApiResponse<void>>;
   };
@@ -79,7 +91,9 @@ export interface ElectronAPI {
   };
 
   environment: {
-    create: (data: Omit<Environment, '_id' | 'type' | 'created' | 'modified'>) => Promise<Environment>;
+    create: (
+      data: Omit<Environment, '_id' | 'type' | 'created' | 'modified'>
+    ) => Promise<Environment>;
     update: (id: string, data: Partial<Environment>) => Promise<Environment>;
     delete: (id: string) => Promise<void>;
     activate: (id: string) => Promise<void>;
@@ -102,7 +116,10 @@ export interface ElectronAPI {
     exportWorkspace: (workspaceId: string) => Promise<{ success: boolean; error?: string }>;
     importWorkspace: () => Promise<{ success: boolean; data?: Workspace; error?: string }>;
     importPostman: () => Promise<{ success: boolean; data?: Workspace; error?: string }>;
-    importCurl: (curlCommand: string, parentId: string) => Promise<{ success: boolean; data?: Request; error?: string }>;
+    importCurl: (
+      curlCommand: string,
+      parentId: string
+    ) => Promise<{ success: boolean; data?: Request; error?: string }>;
   };
 
   runner: {
@@ -115,17 +132,18 @@ export interface ElectronAPI {
     connect: (requestId: string, url: string) => void;
     disconnect: (requestId: string) => void;
     send: (requestId: string, message: string) => void;
-    onEvent: (callback: (payload: { requestId: string; type: string; data?: string; timestamp: number }) => void) => () => void;
+    onEvent: (
+      callback: (payload: {
+        requestId: string;
+        type: string;
+        data?: string;
+        timestamp: number;
+      }) => void
+    ) => () => void;
   };
 
-  on: (
-    channel: IpcChannel,
-    callback: (...args: unknown[]) => void
-  ) => void;
-  off: (
-    channel: IpcChannel,
-    callback: (...args: unknown[]) => void
-  ) => void;
+  on: (channel: IpcChannel, callback: (...args: unknown[]) => void) => void;
+  off: (channel: IpcChannel, callback: (...args: unknown[]) => void) => void;
 }
 
 declare global {

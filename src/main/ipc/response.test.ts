@@ -1,19 +1,19 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerResponseHandlers } from './response';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import * as models from '../database/models';
 import { ipcMain } from 'electron';
 
 vi.mock('electron', () => ({
   ipcMain: {
-    handle: vi.fn()
-  }
+    handle: vi.fn(),
+  },
 }));
 
 vi.mock('../database/models');
 vi.mock('../utils/file-manager', () => ({
-  readResponseBody: vi.fn().mockResolvedValue('{}')
+  readResponseBody: vi.fn().mockResolvedValue('{}'),
 }));
 
 describe('Response IPC Handlers', () => {
@@ -52,8 +52,8 @@ describe('Response IPC Handlers', () => {
   });
 
   it('getHistory should handle error', async () => {
-      vi.mocked(models.getResponseHistory).mockRejectedValue(new Error('Fail'));
-      const res = await handlers[IPC_CHANNELS.RESPONSE_GET_HISTORY](null, 'req1');
-      expect(res.success).toBe(false);
+    vi.mocked(models.getResponseHistory).mockRejectedValue(new Error('Fail'));
+    const res = await handlers[IPC_CHANNELS.RESPONSE_GET_HISTORY](null, 'req1');
+    expect(res.success).toBe(false);
   });
 });

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { CollectionRunResult, RunProgress } from '../../../shared/types';
+import { CollectionRunResult, RunProgress } from '@shared/types';
 import { Dialog } from '../common/Dialog';
 import { Button } from '../common/Button';
 import { FaPlay, FaStop, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { logger } from '../../utils/logger';
 import './RunnerModal.css';
 
 interface RunnerModalProps {
@@ -46,7 +47,7 @@ export const RunnerModal: React.FC<RunnerModalProps> = ({
       const runResult = await window.api.runner.start(targetId, targetType);
       setResult(runResult);
     } catch (error) {
-      console.error('Failed to run collection:', error);
+      logger.error('Failed to run collection:', error);
       // Handle error state in UI
     } finally {
       setIsRunning(false);
@@ -72,8 +73,12 @@ export const RunnerModal: React.FC<RunnerModalProps> = ({
           {progress.completed} / {progress.total} requests completed
         </p>
         <div className="stats">
-          <span><FaCheckCircle className="pass-icon" /> {progress.passed}</span>
-          <span><FaTimesCircle className="fail-icon" /> {progress.failed}</span>
+          <span>
+            <FaCheckCircle className="pass-icon" /> {progress.passed}
+          </span>
+          <span>
+            <FaTimesCircle className="fail-icon" /> {progress.failed}
+          </span>
         </div>
       </div>
     );
@@ -85,11 +90,15 @@ export const RunnerModal: React.FC<RunnerModalProps> = ({
       <div className="result-section">
         <h4>Run Completed</h4>
         <div className="stats">
-          <span><FaCheckCircle className="pass-icon" /> {result.passedRequests} Passed</span>
-          <span><FaTimesCircle className="fail-icon" /> {result.failedRequests} Failed</span>
+          <span>
+            <FaCheckCircle className="pass-icon" /> {result.passedRequests} Passed
+          </span>
+          <span>
+            <FaTimesCircle className="fail-icon" /> {result.failedRequests} Failed
+          </span>
         </div>
         <ul className="result-list">
-          {result.results.map(res => (
+          {result.results.map((res) => (
             <li key={res.requestId} className={`result-item ${res.status}`}>
               {res.status === 'pass' ? <FaCheckCircle /> : <FaTimesCircle />}
               <span>{res.requestName}</span>

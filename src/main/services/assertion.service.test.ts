@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runAssertions } from './assertion.service';
-import { Response, Assertion } from '../../shared/types';
+import { Response, Assertion } from '@shared/types';
 
 describe('AssertionService', () => {
   const mockResponse: Response = {
@@ -20,11 +20,11 @@ describe('AssertionService', () => {
       user: {
         id: 1,
         name: 'John Doe',
-        roles: ['admin', 'user']
+        roles: ['admin', 'user'],
       },
-      status: 'active'
+      status: 'active',
     }),
-    bodyPath: ''
+    bodyPath: '',
   };
 
   describe('runAssertions', () => {
@@ -42,8 +42,8 @@ describe('AssertionService', () => {
           source: 'status',
           operator: 'equals',
           value: '200',
-          enabled: false
-        }
+          enabled: false,
+        },
       ];
       const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
       expect(result.total).toBe(0);
@@ -53,7 +53,7 @@ describe('AssertionService', () => {
       it('should pass checks for correct status code', () => {
         const assertions: Assertion[] = [
           { id: '1', source: 'status', operator: 'equals', value: '200', enabled: true },
-          { id: '2', source: 'status', operator: 'lessThan', value: '300', enabled: true }
+          { id: '2', source: 'status', operator: 'lessThan', value: '300', enabled: true },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.passed).toBe(2);
@@ -62,7 +62,7 @@ describe('AssertionService', () => {
 
       it('should fail checks for incorrect status code', () => {
         const assertions: Assertion[] = [
-          { id: '1', source: 'status', operator: 'equals', value: '404', enabled: true }
+          { id: '1', source: 'status', operator: 'equals', value: '404', enabled: true },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.passed).toBe(0);
@@ -75,8 +75,22 @@ describe('AssertionService', () => {
     describe('Header Assertions', () => {
       it('should verify header existence and value', () => {
         const assertions: Assertion[] = [
-          { id: '1', source: 'header', property: 'Content-Type', operator: 'contains', value: 'json', enabled: true },
-          { id: '2', source: 'header', property: 'X-Custom-Header', operator: 'equals', value: '123', enabled: true }
+          {
+            id: '1',
+            source: 'header',
+            property: 'Content-Type',
+            operator: 'contains',
+            value: 'json',
+            enabled: true,
+          },
+          {
+            id: '2',
+            source: 'header',
+            property: 'X-Custom-Header',
+            operator: 'equals',
+            value: '123',
+            enabled: true,
+          },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.passed).toBe(2);
@@ -84,7 +98,13 @@ describe('AssertionService', () => {
 
       it('should handle missing headers gracefully', () => {
         const assertions: Assertion[] = [
-          { id: '1', source: 'header', property: 'X-Non-Existent', operator: 'exists', enabled: true }
+          {
+            id: '1',
+            source: 'header',
+            property: 'X-Non-Existent',
+            operator: 'exists',
+            enabled: true,
+          },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.failed).toBe(1);
@@ -95,7 +115,7 @@ describe('AssertionService', () => {
     describe('Response Time Assertions', () => {
       it('should verify response time', () => {
         const assertions: Assertion[] = [
-          { id: '1', source: 'responseTime', operator: 'lessThan', value: '200', enabled: true }
+          { id: '1', source: 'responseTime', operator: 'lessThan', value: '200', enabled: true },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.passed).toBe(1);
@@ -105,8 +125,22 @@ describe('AssertionService', () => {
     describe('JSON Body Assertions', () => {
       it('should verify nested json properties', () => {
         const assertions: Assertion[] = [
-          { id: '1', source: 'jsonBody', property: '$.user.name', operator: 'equals', value: 'John Doe', enabled: true },
-          { id: '2', source: 'jsonBody', property: '$.user.roles[0]', operator: 'equals', value: 'admin', enabled: true }
+          {
+            id: '1',
+            source: 'jsonBody',
+            property: '$.user.name',
+            operator: 'equals',
+            value: 'John Doe',
+            enabled: true,
+          },
+          {
+            id: '2',
+            source: 'jsonBody',
+            property: '$.user.roles[0]',
+            operator: 'equals',
+            value: 'admin',
+            enabled: true,
+          },
         ];
         const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
         expect(result.passed).toBe(2);
@@ -115,7 +149,7 @@ describe('AssertionService', () => {
       it('should handle non-json bodies gracefully', () => {
         const textResponse: Response = { ...mockResponse, body: 'Not JSON' };
         const assertions: Assertion[] = [
-           { id: '1', source: 'jsonBody', property: '$.foo', operator: 'exists', enabled: true }
+          { id: '1', source: 'jsonBody', property: '$.foo', operator: 'exists', enabled: true },
         ];
         const result = runAssertions(assertions, textResponse, textResponse.body || '');
         expect(result.failed).toBe(1);
@@ -124,14 +158,20 @@ describe('AssertionService', () => {
       });
 
       it('should support array existence checks via jsonpath', () => {
-         const assertions: Assertion[] = [
-           { id: '1', source: 'jsonBody', property: '$.user.roles', operator: 'exists', enabled: true }
-         ];
-          const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
-          expect(result.passed).toBe(1);
-          // jsonpath-plus usually returns an array of matches or value.
-          // Our implementation assigns result directly to actualValue.
-          // Assertions verify existance based on != null.
+        const assertions: Assertion[] = [
+          {
+            id: '1',
+            source: 'jsonBody',
+            property: '$.user.roles',
+            operator: 'exists',
+            enabled: true,
+          },
+        ];
+        const result = runAssertions(assertions, mockResponse, mockResponse.body || '');
+        expect(result.passed).toBe(1);
+        // jsonpath-plus usually returns an array of matches or value.
+        // Our implementation assigns result directly to actualValue.
+        // Assertions verify existance based on != null.
       });
     });
   });

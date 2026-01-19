@@ -1,5 +1,6 @@
 import { getIntrospectionQuery } from 'graphql';
 import axios from 'axios';
+import { LoggerService } from './logger.service';
 
 export class GraphQLService {
   /**
@@ -8,14 +9,18 @@ export class GraphQLService {
   static async introspect(url: string, headers: Record<string, string> = {}): Promise<any> {
     try {
       const query = getIntrospectionQuery();
-      
-      const response = await axios.post(url, { query }, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-        timeout: 30000,
-      });
+
+      const response = await axios.post(
+        url,
+        { query },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+          },
+          timeout: 30000,
+        }
+      );
 
       if (response.data?.errors) {
         throw new Error('GraphQL Introspection Errors: ' + JSON.stringify(response.data.errors));
@@ -23,7 +28,7 @@ export class GraphQLService {
 
       return response.data;
     } catch (error) {
-      console.error('Introspection failed:', error);
+      LoggerService.error('Introspection failed:', error);
       throw error;
     }
   }

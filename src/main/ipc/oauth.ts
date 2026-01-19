@@ -1,7 +1,8 @@
 import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { OAuthService } from '../services/oauth.service';
-import type { OAuth2Config } from '../../shared/types';
+import type { OAuth2Config } from '@shared/types';
+import { LoggerService } from '../services/logger.service';
 
 export function registerOAuthHandlers() {
   // Start authorization code flow
@@ -12,7 +13,7 @@ export function registerOAuthHandlers() {
         const token = await OAuthService.startAuthCodeFlow(config, requestId);
         return { success: true, data: token };
       } catch (error) {
-        console.error('OAuth auth flow error:', error);
+        LoggerService.error('OAuth auth flow error:', error);
         return { success: false, error: String(error) };
       }
     }
@@ -26,7 +27,7 @@ export function registerOAuthHandlers() {
         const token = await OAuthService.exchangeCodeForToken(config, code);
         return { success: true, data: token };
       } catch (error) {
-        console.error('OAuth code exchange error:', error);
+        LoggerService.error('OAuth code exchange error:', error);
         return { success: false, error: String(error) };
       }
     }
@@ -40,39 +41,33 @@ export function registerOAuthHandlers() {
         const token = await OAuthService.refreshToken(config, refreshToken, requestId);
         return { success: true, data: token };
       } catch (error) {
-        console.error('OAuth refresh error:', error);
+        LoggerService.error('OAuth refresh error:', error);
         return { success: false, error: String(error) };
       }
     }
   );
 
   // Get stored token
-  ipcMain.handle(
-    IPC_CHANNELS.OAUTH_GET_TOKEN,
-    async (_event, requestId: string) => {
-      try {
-        const token = await OAuthService.getToken(requestId);
-        return { success: true, data: token };
-      } catch (error) {
-        console.error('OAuth get token error:', error);
-        return { success: false, error: String(error) };
-      }
+  ipcMain.handle(IPC_CHANNELS.OAUTH_GET_TOKEN, async (_event, requestId: string) => {
+    try {
+      const token = await OAuthService.getToken(requestId);
+      return { success: true, data: token };
+    } catch (error) {
+      LoggerService.error('OAuth get token error:', error);
+      return { success: false, error: String(error) };
     }
-  );
+  });
 
   // Clear stored token
-  ipcMain.handle(
-    IPC_CHANNELS.OAUTH_CLEAR_TOKEN,
-    async (_event, requestId: string) => {
-      try {
-        await OAuthService.clearToken(requestId);
-        return { success: true };
-      } catch (error) {
-        console.error('OAuth clear token error:', error);
-        return { success: false, error: String(error) };
-      }
+  ipcMain.handle(IPC_CHANNELS.OAUTH_CLEAR_TOKEN, async (_event, requestId: string) => {
+    try {
+      await OAuthService.clearToken(requestId);
+      return { success: true };
+    } catch (error) {
+      LoggerService.error('OAuth clear token error:', error);
+      return { success: false, error: String(error) };
     }
-  );
+  });
 
   // Client credentials grant
   ipcMain.handle(
@@ -82,7 +77,7 @@ export function registerOAuthHandlers() {
         const token = await OAuthService.clientCredentialsGrant(config, requestId);
         return { success: true, data: token };
       } catch (error) {
-        console.error('OAuth client credentials error:', error);
+        LoggerService.error('OAuth client credentials error:', error);
         return { success: false, error: String(error) };
       }
     }
@@ -96,7 +91,7 @@ export function registerOAuthHandlers() {
         const token = await OAuthService.passwordGrant(config, requestId);
         return { success: true, data: token };
       } catch (error) {
-        console.error('OAuth password grant error:', error);
+        LoggerService.error('OAuth password grant error:', error);
         return { success: false, error: String(error) };
       }
     }

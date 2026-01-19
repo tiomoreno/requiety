@@ -1,11 +1,12 @@
 import type { Request } from '@shared/types';
+import { logger } from '../utils/logger';
 
 export const dataTransferService = {
   exportWorkspace: async (workspaceId: string): Promise<boolean> => {
     const result = await window.api.importExport.exportWorkspace(workspaceId);
     if (!result.success) {
       if (result.error !== 'Cancelled') {
-        console.error('Export failed:', result.error);
+        logger.error('Export failed:', result.error);
         throw new Error(result.error);
       }
       return false;
@@ -17,7 +18,7 @@ export const dataTransferService = {
     const result = await window.api.importExport.importWorkspace();
     if (!result.success) {
       if (result.error !== 'Cancelled') {
-        console.error('Import failed:', result.error);
+        logger.error('Import failed:', result.error);
         throw new Error(result.error);
       }
       return false;
@@ -29,7 +30,7 @@ export const dataTransferService = {
     const result = await window.api.importExport.importPostman();
     if (!result.success) {
       if (result.error !== 'Cancelled') {
-        console.error('Postman import failed:', result.error);
+        logger.error('Postman import failed:', result.error);
         throw new Error(result.error);
       }
       return false;
@@ -40,7 +41,7 @@ export const dataTransferService = {
   importFromCurl: async (command: string, workspaceId: string): Promise<Request> => {
     const result = await window.api.importExport.importCurl(command, workspaceId);
     if (!result.success) {
-      console.error('cURL import failed:', result.error);
+      logger.error('cURL import failed:', result.error);
       throw new Error(result.error || 'Failed to import cURL command');
     }
     return result.data!;

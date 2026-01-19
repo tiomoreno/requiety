@@ -1,4 +1,5 @@
 import { createContext, runInContext } from 'node:vm';
+import { LoggerService } from './logger.service';
 
 const DEFAULT_TIMEOUT_MS = 1000;
 
@@ -38,12 +39,12 @@ export class ScriptService {
         from: Array.from,
         of: Array.of,
       },
-      // Wrapped console that prefixes output
+      // Wrapped console that prefixes output and uses LoggerService
       console: {
-        log: (...args: unknown[]) => console.log('[Script Log]', ...args),
-        warn: (...args: unknown[]) => console.warn('[Script Warn]', ...args),
-        error: (...args: unknown[]) => console.error('[Script Error]', ...args),
-        info: (...args: unknown[]) => console.info('[Script Info]', ...args),
+        log: (...args: unknown[]) => LoggerService.info('[Script]', ...args),
+        warn: (...args: unknown[]) => LoggerService.warn('[Script]', ...args),
+        error: (...args: unknown[]) => LoggerService.error('[Script]', ...args),
+        info: (...args: unknown[]) => LoggerService.info('[Script]', ...args),
       },
       // String utilities
       parseInt,
@@ -84,7 +85,7 @@ export class ScriptService {
 
       return context;
     } catch (error) {
-      console.error('Error executing script:', error);
+      LoggerService.error('Error executing script:', error);
       throw new Error(`Script execution failed: ${(error as Error).message}`);
     }
   }

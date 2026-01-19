@@ -1,15 +1,15 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerWorkspaceHandlers } from './workspace';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import * as models from '../database/models';
 import { ipcMain } from 'electron';
 
 // Mock dependencies
 vi.mock('electron', () => ({
   ipcMain: {
-    handle: vi.fn()
-  }
+    handle: vi.fn(),
+  },
 }));
 
 vi.mock('../database/models');
@@ -20,7 +20,7 @@ describe('Workspace IPC Handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     handlers = {};
-    
+
     // Capture handlers
     vi.mocked(ipcMain.handle).mockImplementation((channel, listener) => {
       handlers[channel] = listener;
@@ -30,11 +30,26 @@ describe('Workspace IPC Handlers', () => {
   });
 
   it('should register all handlers', () => {
-    expect(ipcMain.handle).toHaveBeenCalledWith(IPC_CHANNELS.WORKSPACE_CREATE, expect.any(Function));
-    expect(ipcMain.handle).toHaveBeenCalledWith(IPC_CHANNELS.WORKSPACE_UPDATE, expect.any(Function));
-    expect(ipcMain.handle).toHaveBeenCalledWith(IPC_CHANNELS.WORKSPACE_DELETE, expect.any(Function));
-    expect(ipcMain.handle).toHaveBeenCalledWith(IPC_CHANNELS.WORKSPACE_GET_ALL, expect.any(Function));
-    expect(ipcMain.handle).toHaveBeenCalledWith(IPC_CHANNELS.WORKSPACE_GET_BY_ID, expect.any(Function));
+    expect(ipcMain.handle).toHaveBeenCalledWith(
+      IPC_CHANNELS.WORKSPACE_CREATE,
+      expect.any(Function)
+    );
+    expect(ipcMain.handle).toHaveBeenCalledWith(
+      IPC_CHANNELS.WORKSPACE_UPDATE,
+      expect.any(Function)
+    );
+    expect(ipcMain.handle).toHaveBeenCalledWith(
+      IPC_CHANNELS.WORKSPACE_DELETE,
+      expect.any(Function)
+    );
+    expect(ipcMain.handle).toHaveBeenCalledWith(
+      IPC_CHANNELS.WORKSPACE_GET_ALL,
+      expect.any(Function)
+    );
+    expect(ipcMain.handle).toHaveBeenCalledWith(
+      IPC_CHANNELS.WORKSPACE_GET_BY_ID,
+      expect.any(Function)
+    );
   });
 
   it('create should return success', async () => {
@@ -42,7 +57,7 @@ describe('Workspace IPC Handlers', () => {
     vi.mocked(models.createWorkspace).mockResolvedValue(mockWs as any);
 
     const result = await handlers[IPC_CHANNELS.WORKSPACE_CREATE](null, { name: 'Test' });
-    
+
     expect(models.createWorkspace).toHaveBeenCalledWith({ name: 'Test' });
     expect(result).toEqual({ success: true, data: mockWs });
   });
@@ -52,7 +67,7 @@ describe('Workspace IPC Handlers', () => {
     const result = await handlers[IPC_CHANNELS.WORKSPACE_CREATE](null, { name: 'Test' });
     expect(result).toEqual({ success: false, error: 'Fail' });
   });
-  
+
   it('update should return success', async () => {
     const mockWs = { _id: 'w1', name: 'New' };
     vi.mocked(models.updateWorkspace).mockResolvedValue(mockWs as any);

@@ -1,13 +1,19 @@
-import WebSocket from 'ws';
+import { WebSocket } from 'ws';
 import { BrowserWindow } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
-import { WebSocketMessage } from '../../shared/types';
-import { generateId } from '../utils/id-generator';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import crypto from 'crypto';
 
 interface ActiveConnection {
   ws: WebSocket;
   requestId: string;
+}
+
+interface WebSocketPayload {
+  requestId: string;
+  type: 'incoming' | 'outgoing' | 'info' | 'error' | 'status';
+  data: string;
+  timestamp: number;
+  id?: string;
 }
 
 export class WebSocketService {
@@ -44,9 +50,12 @@ export class WebSocketService {
         this.sendToRenderer(requestId, 'status', 'disconnected');
         this.connections.delete(requestId);
       });
-
     } catch (error) {
-       this.sendToRenderer(requestId, 'error', error instanceof Error ? error.message : 'Connection failed');
+      this.sendToRenderer(
+        requestId,
+        'error',
+        error instanceof Error ? error.message : 'Connection failed'
+      );
     }
   }
 
@@ -68,13 +77,17 @@ export class WebSocketService {
     }
   }
 
-  private static sendToRenderer(requestId: string, type: 'incoming' | 'outgoing' | 'info' | 'error' | 'status', data: string) {
+  private static sendToRenderer(
+    requestId: string,
+    type: 'incoming' | 'outgoing' | 'info' | 'error' | 'status',
+    data: string
+  ) {
     if (this.window && !this.window.isDestroyed()) {
-        const payload: any = { requestId, type, data, timestamp: Date.now() };
-        if (type !== 'status') {
-             payload.id = crypto.randomUUID();
-        }
-        this.window.webContents.send(IPC_CHANNELS.WS_EVENT, payload);
+      const payload: WebSocketPayload = { requestId, type, data, timestamp: Date.now() };
+      if (type !== 'status') {
+        payload.id = crypto.randomUUID();
+      }
+      this.window.webContents.send(IPC_CHANNELS.WS_EVENT, payload);
     }
   }
 }

@@ -1,9 +1,6 @@
-import type { WorkspaceTreeItem } from '../../shared/types';
+import type { WorkspaceTreeItem } from '@shared/types';
 
-export const filterTree = (
-  items: WorkspaceTreeItem[],
-  query: string
-): WorkspaceTreeItem[] => {
+export const filterTree = (items: WorkspaceTreeItem[], query: string): WorkspaceTreeItem[] => {
   if (!query) return items;
 
   const lowerQuery = query.toLowerCase();
@@ -30,28 +27,26 @@ export const filterTree = (
       }
     }
 
-    // If item itself matches, return it (with all children? or just itself? 
+    // If item itself matches, return it (with all children? or just itself?
     // Usually if folder matches, we might want to show all children, or just the folder?
     // Let's matching folder implies showing the folder.
     if (matches) {
-       // If the folder matches, we *could* show all children, but strictly, search usually filters.
-       // Let's keep it simple: if folder matches, return it. If it has children, they might be filtered out if they don't match?
-       // Ideally: "Project A" matches -> show Project A. 
-       // If "Project A" has "Request B" (not match), should Request B be hidden?
-       // Standard behavior: 
-       // 1. If leaf matches, show leaf and all parents.
-       // 2. If folder matches, show folder. Children? Maybe show all if folder matches?
-       // Let's stick to strict content match for now: Show node if it OR descendant matches.
-       // So if I search "Auth", I see "Auth Folder" (even if empty) AND "GET Auth".
-       // If I search "GET", I see "Auth Folder" > "GET Auth", but NOT "Auth Folder" > "POST Login".
-       
-       return item;
+      // If the folder matches, we *could* show all children, but strictly, search usually filters.
+      // Let's keep it simple: if folder matches, return it. If it has children, they might be filtered out if they don't match?
+      // Ideally: "Project A" matches -> show Project A.
+      // If "Project A" has "Request B" (not match), should Request B be hidden?
+      // Standard behavior:
+      // 1. If leaf matches, show leaf and all parents.
+      // 2. If folder matches, show folder. Children? Maybe show all if folder matches?
+      // Let's stick to strict content match for now: Show node if it OR descendant matches.
+      // So if I search "Auth", I see "Auth Folder" (even if empty) AND "GET Auth".
+      // If I search "GET", I see "Auth Folder" > "GET Auth", but NOT "Auth Folder" > "POST Login".
+
+      return item;
     }
 
     return null;
   };
 
-  return items
-    .map(filterItem)
-    .filter((item): item is WorkspaceTreeItem => item !== null);
+  return items.map(filterItem).filter((item): item is WorkspaceTreeItem => item !== null);
 };

@@ -1,5 +1,5 @@
 import { ipcMain, dialog } from 'electron';
-import { IPC_CHANNELS } from '../../shared/ipc-channels';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { SyncService } from '../services/sync.service';
 
 export const registerSyncHandlers = () => {
@@ -21,7 +21,16 @@ export const registerSyncHandlers = () => {
   // Setup Git Sync for a workspace
   ipcMain.handle(
     IPC_CHANNELS.SYNC_SETUP,
-    async (_, { workspaceId, url, branch, token, directory }: { workspaceId: string; url: string; branch: string; token: string; directory: string }) => {
+    async (
+      _,
+      {
+        workspaceId,
+        url,
+        branch,
+        token,
+        directory,
+      }: { workspaceId: string; url: string; branch: string; token: string; directory: string }
+    ) => {
       try {
         await SyncService.setup(workspaceId, url, branch, token, directory);
         return { success: true };

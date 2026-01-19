@@ -1,4 +1,4 @@
-import type { Assertion, Request, ApiResponse } from '../../shared/types';
+import type { Assertion, Request, ApiResponse } from '@shared/types';
 
 /**
  * Updates the assertions for a given request.

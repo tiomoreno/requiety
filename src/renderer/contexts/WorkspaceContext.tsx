@@ -1,6 +1,9 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
-import type { Workspace } from '../../shared/types';
+import type { Workspace } from '@shared/types';
 import { workspaceService } from '../services/workspace.service';
+import { logger } from '../utils/logger';
+
+const ACTIVE_WORKSPACE_ID_KEY = 'requiety.activeWorkspaceId';
 
 interface WorkspaceContextType {
   workspaces: Workspace[];
@@ -9,7 +12,10 @@ interface WorkspaceContextType {
   error: string | null;
   setActiveWorkspace: (workspace: Workspace | null) => void;
   createWorkspace: (name: string) => Promise<Workspace>;
-  updateWorkspace: (id: string, name: string) => Promise<void>;
+  updateWorkspace: (
+    id: string,
+    data: Partial<Omit<Workspace, '_id' | 'type' | 'created' | 'modified'>>
+  ) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
   refreshWorkspaces: () => Promise<void>;
 }
@@ -22,9 +28,19 @@ interface WorkspaceProviderProps {
 
 export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
+  const [activeWorkspace, _setActiveWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Custom setter for active workspace to persist the ID
+  const setActiveWorkspace = (workspace: Workspace | null) => {
+    _setActiveWorkspace(workspace);
+    if (workspace) {
+      localStorage.setItem(ACTIVE_WORKSPACE_ID_KEY, workspace._id);
+    } else {
+      localStorage.removeItem(ACTIVE_WORKSPACE_ID_KEY);
+    }
+  };
 
   // Load workspaces on mount
   useEffect(() => {
@@ -38,13 +54,16 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
       const data = await workspaceService.getAll();
       setWorkspaces(data);
 
-      // Auto-select first workspace if none selected
-      if (!activeWorkspace && data.length > 0) {
-        setActiveWorkspace(data[0]);
-      }
+      const savedId = localStorage.getItem(ACTIVE_WORKSPACE_ID_KEY);
+      const workspaceToSelect =
+        data.find((w) => w._id === savedId) || // Find previously active
+        data[0] || // Or fallback to the first
+        null; // Or null if no workspaces exist
+
+      _setActiveWorkspace(workspaceToSelect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load workspaces');
-      console.error('Error loading workspaces:', err);
+      logger.error('Error loading workspaces:', err);
     } finally {
       setLoading(false);
     }
@@ -53,7 +72,7 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
   const createWorkspace = async (name: string): Promise<Workspace> => {
     try {
       setError(null);
-      const workspace = await workspaceService.create(name);
+      const workspace = await workspaceService.create({ name });
       setWorkspaces((prev) => [...prev, workspace]);
       setActiveWorkspace(workspace);
       return workspace;
@@ -64,13 +83,14 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
     }
   };
 
-  const updateWorkspace = async (id: string, name: string): Promise<void> => {
+  const updateWorkspace = async (
+    id: string,
+    data: Partial<Omit<Workspace, '_id' | 'type' | 'created' | 'modified'>>
+  ): Promise<void> => {
     try {
       setError(null);
-      const updated = await workspaceService.update(id, { name });
-      setWorkspaces((prev) =>
-        prev.map((w) => (w._id === id ? updated : w))
-      );
+      const updated = await workspaceService.update(id, data);
+      setWorkspaces((prev) => prev.map((w) => (w._id === id ? updated : w)));
       if (activeWorkspace?._id === id) {
         setActiveWorkspace(updated);
       }
@@ -85,11 +105,11 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
     try {
       setError(null);
       await workspaceService.delete(id);
-      setWorkspaces((prev) => prev.filter((w) => w._id !== id));
+      const remaining = workspaces.filter((w) => w._id !== id);
+      setWorkspaces(remaining);
 
       // If deleted workspace was active, select another one
       if (activeWorkspace?._id === id) {
-        const remaining = workspaces.filter((w) => w._id !== id);
         setActiveWorkspace(remaining.length > 0 ? remaining[0] : null);
       }
     } catch (err) {
@@ -115,9 +135,5 @@ export const WorkspaceProvider = ({ children }: WorkspaceProviderProps) => {
     refreshWorkspaces,
   };
 
-  return (
-    <WorkspaceContext.Provider value={value}>
-      {children}
-    </WorkspaceContext.Provider>
-  );
+  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 };
