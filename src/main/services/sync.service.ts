@@ -39,7 +39,39 @@ const SYNC_DIR_STRUCTURE = {
   ENVIRONMENTS: 'environments',
 };
 
+const ENCRYPTED_TOKEN_PREFIX = 'enc:';
+
 const formatJson = (data: unknown) => JSON.stringify(data, null, 2);
+
+/**
+ * Checks if a token is encrypted (has the enc: prefix)
+ */
+const isTokenEncrypted = (token: string): boolean => {
+  return token.startsWith(ENCRYPTED_TOKEN_PREFIX);
+};
+
+/**
+ * Encrypts a token and adds the enc: prefix
+ */
+const encryptToken = (token: string): string => {
+  if (!token) return token;
+  if (isTokenEncrypted(token)) return token; // Already encrypted
+  return ENCRYPTED_TOKEN_PREFIX + SecurityService.encrypt(token);
+};
+
+/**
+ * Decrypts a token, handling both encrypted (with enc: prefix) and plain text tokens
+ * for backwards compatibility with existing data
+ */
+const decryptToken = (token: string): string => {
+  if (!token) return token;
+  if (!isTokenEncrypted(token)) {
+    // Plain text token (legacy data) - return as is
+    return token;
+  }
+  // Remove prefix and decrypt
+  return SecurityService.decrypt(token.slice(ENCRYPTED_TOKEN_PREFIX.length));
+};
 
 interface EnvironmentWithVariables extends Environment {
   variables: Variable[];
@@ -75,7 +107,7 @@ export class SyncService {
     // Decrypt the token before writing to file, but DON'T save it back to the DB.
     const workspaceForExport = { ...workspace };
     if (workspaceForExport.syncToken) {
-      workspaceForExport.syncToken = SecurityService.decrypt(workspaceForExport.syncToken);
+      workspaceForExport.syncToken = decryptToken(workspaceForExport.syncToken);
     }
 
     await fs.writeFile(path.join(workspaceDir, 'workspace.json'), formatJson(workspaceForExport));
@@ -114,7 +146,7 @@ export class SyncService {
     // When reading from a file, the token is plain text. It must be encrypted
     // before it is passed to the database layer (via _upsertWorkspaceData).
     if (workspace.syncToken) {
-      workspace.syncToken = SecurityService.encrypt(workspace.syncToken);
+      workspace.syncToken = encryptToken(workspace.syncToken);
     }
 
     const folders: Folder[] = [];
@@ -176,8 +208,8 @@ export class SyncService {
     if (!workspace.syncToken) {
       return {};
     }
-    const decryptedToken = SecurityService.decrypt(workspace.syncToken);
-    return { username: decryptedToken }; // PAT
+    const token = decryptToken(workspace.syncToken);
+    return { username: token }; // PAT
   }
 
   static async setup(
@@ -225,7 +257,7 @@ export class SyncService {
       syncBranch: branch,
       syncDirectory: directory,
       syncAuthenticationType: 'pat',
-      syncToken: token,
+      syncToken: encryptToken(token),
     });
   }
 

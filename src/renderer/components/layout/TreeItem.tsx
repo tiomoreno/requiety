@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { WorkspaceTreeItem } from '@shared/types';
-import { ContextMenu } from '../common/ContextMenu';
-import { logger } from '../../utils/logger';
+import { ContextMenu } from '@renderer/components/common/ContextMenu';
+import { logger } from '@renderer/utils/logger';
 
 interface TreeItemProps {
   item: WorkspaceTreeItem;

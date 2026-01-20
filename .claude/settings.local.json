@@ -16,7 +16,10 @@
       "Bash(npm run package:*)",
       "Bash(timeout 15 npm start)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(xargs -I {} sh -c 'basename {} .tsx')",
+      "Bash(xargs -I {} sh -c 'basename {} .test.tsx')",
+      "Bash(xargs:*)"
     ]
   }
 }

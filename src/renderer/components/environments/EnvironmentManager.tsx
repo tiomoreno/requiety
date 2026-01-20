@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Environment, Variable } from '@shared/types';
-import { environmentService } from '../../services/environment.service';
-import { variableService } from '../../services/variable.service';
-import { Dialog } from '../common/Dialog';
+import { Environment } from '@shared/types';
+import { environmentService } from '@renderer/services/environment.service';
+import { variableService } from '@renderer/services/variable.service';
+import { Dialog } from '@renderer/components/common/Dialog';
 import { VariableEditor, DraftVariable } from './VariableEditor';
-import { logger } from '../../utils/logger';
+import { logger } from '@renderer/utils/logger';
 
 interface EnvironmentManagerProps {
   isOpen: boolean;

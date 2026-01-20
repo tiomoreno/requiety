@@ -1,14 +1,14 @@
 import { useState, useMemo, RefObject } from 'react';
-import { filterTree } from '../../utils/tree-filter';
+import { filterTree } from '@renderer/utils/tree-filter';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { TreeView } from './TreeView';
-import { Button } from '../common/Button';
-import { useWorkspaces } from '../../hooks/useWorkspaces';
-import { useData } from '../../hooks/useData';
-import { useSettings } from '../../contexts/SettingsContext';
-import { EnvironmentSelector } from '../environments/EnvironmentSelector';
-import { RunnerModal } from '../runner/RunnerModal';
-import { logger } from '../../utils/logger';
+import { Button } from '@renderer/components/common/Button';
+import { useWorkspaces } from '@renderer/hooks/useWorkspaces';
+import { useData } from '@renderer/hooks/useData';
+import { useSettings } from '@renderer/contexts/SettingsContext';
+import { EnvironmentSelector } from '@renderer/components/environments/EnvironmentSelector';
+import { RunnerModal } from '@renderer/components/runner/RunnerModal';
+import { logger } from '@renderer/utils/logger';
 
 type View = 'requests' | 'mock';
 

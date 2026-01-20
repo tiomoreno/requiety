@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Environment } from '@shared/types';
-import { environmentService } from '../../services/environment.service';
+import { environmentService } from '@renderer/services/environment.service';
 import { EnvironmentManager } from './EnvironmentManager';
-import { logger } from '../../utils/logger';
+import { logger } from '@renderer/utils/logger';
 
 interface EnvironmentSelectorProps {
   workspaceId: string;

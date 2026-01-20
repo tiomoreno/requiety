@@ -1,16 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import * as ReactWindowModule from 'react-window';
-import type { ListChildComponentProps } from 'react-window';
 import { VirtualTreeItem } from './VirtualTreeItem';
-import { useData } from '../../hooks/useData';
-import { flattenTree } from '../../utils/tree-builder';
-import type { FlatTreeItem } from '../../utils/tree-builder';
+import { useData } from '@renderer/hooks/useData';
+import { flattenTree } from '@renderer/utils/tree-builder';
 import type { WorkspaceTreeItem } from '@shared/types';
 
 // Workaround for Vite/CJS interop issues with react-window
+// Workaround for Vite/CJS interop issues with react-window
 /* eslint-disable import/namespace, @typescript-eslint/no-explicit-any */
 const FixedSizeList =
-  ReactWindowModule.FixedSizeList || (ReactWindowModule as any).default?.FixedSizeList;
+  (ReactWindowModule as any).FixedSizeList || (ReactWindowModule as any).default?.FixedSizeList;
 /* eslint-enable import/namespace, @typescript-eslint/no-explicit-any */
 
 interface TreeViewProps {
@@ -121,7 +120,7 @@ export const TreeView = ({ items, forceExpand, onRename, onMove, onRun }: TreeVi
   const useVirtualization = flatItems.length > VIRTUALIZATION_THRESHOLD;
 
   if (useVirtualization) {
-    const Row = ({ index, style }: ListChildComponentProps) => {
+    const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
       const flatItem = flatItems[index];
       return (
         <div style={style}>
