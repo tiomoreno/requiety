@@ -6,7 +6,9 @@
   justify-content: center;
 }
 
-.progress-section, .result-section, .idle-state {
+.progress-section,
+.result-section,
+.idle-state {
   text-align: center;
 }
 
@@ -68,7 +70,8 @@
   color: var(--color-success);
 }
 
-.result-item.fail, .result-item.error {
+.result-item.fail,
+.result-item.error {
   color: var(--color-danger);
 }
 

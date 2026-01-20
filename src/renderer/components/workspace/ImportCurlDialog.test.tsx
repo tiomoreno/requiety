@@ -15,11 +15,7 @@ describe('ImportCurlDialog', () => {
 
   const renderDialog = (isOpen = true) => {
     return render(
-      <ImportCurlDialog
-        isOpen={isOpen}
-        onClose={mockOnClose}
-        onImport={mockOnImport}
-      />
+      <ImportCurlDialog isOpen={isOpen} onClose={mockOnClose} onImport={mockOnImport} />
     );
   };
 
@@ -40,9 +36,7 @@ describe('ImportCurlDialog', () => {
 
     it('should render description text', () => {
       renderDialog();
-      expect(
-        screen.getByText(/Paste a cURL command to create a new request/)
-      ).toBeTruthy();
+      expect(screen.getByText(/Paste a cURL command to create a new request/)).toBeTruthy();
     });
 
     it('should render paste button', () => {

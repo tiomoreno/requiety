@@ -53,7 +53,8 @@ export const ImportCurlDialog = ({ isOpen, onClose, onImport }: ImportCurlDialog
     <Dialog isOpen={isOpen} onClose={handleClose} title="Import from cURL" maxWidth="lg">
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Paste a cURL command to create a new request. You can copy cURL commands from browser DevTools or API documentation.
+          Paste a cURL command to create a new request. You can copy cURL commands from browser
+          DevTools or API documentation.
         </p>
 
         <div className="relative">

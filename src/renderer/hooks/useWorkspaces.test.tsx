@@ -9,9 +9,11 @@ describe('useWorkspaces', () => {
   it('should throw if used outside provider', () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    expect(() => renderHook(() => useWorkspaces())).toThrow('useWorkspaces must be used within WorkspaceProvider');
-    
+
+    expect(() => renderHook(() => useWorkspaces())).toThrow(
+      'useWorkspaces must be used within WorkspaceProvider'
+    );
+
     spy.mockRestore();
   });
 

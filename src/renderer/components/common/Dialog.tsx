@@ -8,13 +8,7 @@ interface DialogProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const Dialog = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-  maxWidth = 'md',
-}: DialogProps) => {
+export const Dialog = ({ isOpen, onClose, title, children, maxWidth = 'md' }: DialogProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Handle ESC key
@@ -54,10 +48,7 @@ export const Dialog = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
 
       {/* Dialog */}
       <div
@@ -69,10 +60,7 @@ export const Dialog = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2
-            id="dialog-title"
-            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-          >
+          <h2 id="dialog-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {title}
           </h2>
           <button
@@ -80,12 +68,7 @@ export const Dialog = ({
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             aria-label="Close dialog"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

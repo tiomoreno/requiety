@@ -5,13 +5,13 @@ import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 
 // Mocks for hooks used
 vi.mock('./useData', () => ({
-  useData: vi.fn()
+  useData: vi.fn(),
 }));
 vi.mock('./useWorkspaces', () => ({
-  useWorkspaces: vi.fn()
+  useWorkspaces: vi.fn(),
 }));
 vi.mock('../contexts/SettingsContext', () => ({
-  useSettings: vi.fn()
+  useSettings: vi.fn(),
 }));
 
 import { useData } from './useData';
@@ -74,7 +74,7 @@ describe('useKeyboardShortcuts', () => {
       metaKey,
       shiftKey,
       bubbles: true,
-      cancelable: true
+      cancelable: true,
     });
     window.dispatchEvent(event);
     return event;

@@ -17,19 +17,19 @@ export const Button = ({
   ...props
 }: ButtonProps) => {
   const baseClasses = 'btn';
-  
+
   const variantClasses = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
     danger: 'btn-danger',
   };
-  
+
   const sizeClasses = {
     sm: 'btn-sm',
     md: '',
     lg: 'px-6 py-3 text-base',
   };
-  
+
   const classes = [
     baseClasses,
     variantClasses[variant],
@@ -39,13 +39,9 @@ export const Button = ({
   ]
     .filter(Boolean)
     .join(' ');
-  
+
   return (
-    <button
-      className={classes}
-      disabled={disabled || loading}
-      {...props}
-    >
+    <button className={classes} disabled={disabled || loading} {...props}>
       {loading ? (
         <span className="flex items-center gap-2">
           <svg

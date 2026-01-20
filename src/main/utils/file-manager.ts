@@ -28,12 +28,8 @@ export const getBackupsPath = (): string => {
  * Initialize application directories
  */
 export const initializeDirectories = async (): Promise<void> => {
-  const directories = [
-    path.join(getAppDataPath(), 'data'),
-    getResponsesPath(),
-    getBackupsPath(),
-  ];
-  
+  const directories = [path.join(getAppDataPath(), 'data'), getResponsesPath(), getBackupsPath()];
+
   for (const dir of directories) {
     if (!existsSync(dir)) {
       await fs.mkdir(dir, { recursive: true });
@@ -44,10 +40,7 @@ export const initializeDirectories = async (): Promise<void> => {
 /**
  * Save response body to file
  */
-export const saveResponseBody = async (
-  responseId: string,
-  body: string
-): Promise<string> => {
+export const saveResponseBody = async (responseId: string, body: string): Promise<string> => {
   const filePath = path.join(getResponsesPath(), `${responseId}.txt`);
   await fs.writeFile(filePath, body, 'utf-8');
   return filePath;
@@ -72,10 +65,6 @@ export const deleteResponseBody = async (filePath: string): Promise<void> => {
 /**
  * Delete all response bodies for a request
  */
-export const deleteRequestResponses = async (
-  responsePaths: string[]
-): Promise<void> => {
-  await Promise.all(
-    responsePaths.map((filePath) => deleteResponseBody(filePath))
-  );
+export const deleteRequestResponses = async (responsePaths: string[]): Promise<void> => {
+  await Promise.all(responsePaths.map((filePath) => deleteResponseBody(filePath)));
 };

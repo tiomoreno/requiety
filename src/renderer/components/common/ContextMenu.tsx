@@ -23,7 +23,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }
         onClose();
       }
     };
-    
+
     // Use capture to handle clicks properly
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
@@ -40,8 +40,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }
   };
 
   return (
-    <div 
-      ref={menuRef} 
+    <div
+      ref={menuRef}
       className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md py-1 min-w-[160px]"
       style={style}
     >
@@ -57,7 +57,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }
             onClose();
           }}
         >
-          {item.icon && <span className="w-4 h-4 flex items-center justify-center">{item.icon}</span>}
+          {item.icon && (
+            <span className="w-4 h-4 flex items-center justify-center">{item.icon}</span>
+          )}
           {item.label}
         </button>
       ))}

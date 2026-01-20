@@ -29,8 +29,8 @@ export const EmptyState = ({ onCreateWorkspace }: EmptyStateProps) => {
         </h2>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          A modern, open-source API client for testing REST APIs.
-          Get started by creating your first workspace.
+          A modern, open-source API client for testing REST APIs. Get started by creating your first
+          workspace.
         </p>
 
         <Button onClick={onCreateWorkspace} size="lg">

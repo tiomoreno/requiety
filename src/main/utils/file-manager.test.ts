@@ -1,14 +1,14 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { 
-  getAppDataPath, 
-  getResponsesPath, 
-  getBackupsPath, 
-  initializeDirectories, 
+import {
+  getAppDataPath,
+  getResponsesPath,
+  getBackupsPath,
+  initializeDirectories,
   saveResponseBody,
   readResponseBody,
   deleteResponseBody,
-  deleteRequestResponses
+  deleteRequestResponses,
 } from './file-manager';
 import path from 'path';
 import fs from 'fs/promises';
@@ -17,13 +17,13 @@ import { app } from 'electron';
 
 vi.mock('electron', () => ({
   app: {
-    getPath: vi.fn().mockReturnValue('/app/data')
-  }
+    getPath: vi.fn().mockReturnValue('/app/data'),
+  },
 }));
 
 vi.mock('fs/promises');
 vi.mock('fs', () => ({
-  existsSync: vi.fn()
+  existsSync: vi.fn(),
 }));
 
 describe('File Manager', () => {
@@ -48,18 +48,18 @@ describe('File Manager', () => {
   describe('initializeDirectories', () => {
     it('should create directories if they do not exist', async () => {
       vi.mocked(existsSync).mockReturnValue(false);
-      
+
       await initializeDirectories();
-      
+
       expect(fs.mkdir).toHaveBeenCalledTimes(3);
       expect(fs.mkdir).toHaveBeenCalledWith(expect.stringContaining('data'), { recursive: true });
     });
 
     it('should skip creation if directories exist', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      
+
       await initializeDirectories();
-      
+
       expect(fs.mkdir).not.toHaveBeenCalled();
     });
   });

@@ -10,9 +10,9 @@ describe('useData', () => {
     // Suppress console.error for the expected error
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     expect(() => renderHook(() => useData())).toThrow('useData must be used within DataProvider');
-    
+
     spy.mockRestore();
   });
 

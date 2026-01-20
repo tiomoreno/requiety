@@ -9,10 +9,7 @@ interface CreateWorkspaceDialogProps {
   onClose: () => void;
 }
 
-export const CreateWorkspaceDialog = ({
-  isOpen,
-  onClose,
-}: CreateWorkspaceDialogProps) => {
+export const CreateWorkspaceDialog = ({ isOpen, onClose }: CreateWorkspaceDialogProps) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,12 +55,7 @@ export const CreateWorkspaceDialog = ({
         />
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={loading}
-          >
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
           <Button type="submit" loading={loading}>
